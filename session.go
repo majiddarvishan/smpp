@@ -357,7 +357,7 @@ func (sess *Session) setState(state SessionState) error {
 	}
 	switch sess.state {
 	case StateOpen:
-		if state != StateBinding {
+		if state != StateBinding && state != StateClosing {
 			return fmt.Errorf("smpp: setting open session to invalid state %s", state)
 		}
 	case StateBinding:

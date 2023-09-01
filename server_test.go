@@ -3,6 +3,7 @@ package smpp_test
 import (
 	"context"
 	"log"
+	"net"
 	"testing"
 	"time"
 
@@ -96,4 +97,47 @@ func bindToServer(bind string, hf smpp.HandlerFunc) *smpp.Session {
 		log.Fatalf("error during bind %v", err)
 	}
 	return sess
+}
+
+func TestServerHandlesClientDisconnect(t *testing.T) {
+	stateChangeCh := make(chan smpp.SessionState, 10)
+	sessConf := smpp.SessionConf{
+		Type:          0,
+		SendWinSize:   0,
+		ReqWinSize:    0,
+		WindowTimeout: 0,
+		SessionState: func(id string, systemID string, state smpp.SessionState) {
+			stateChangeCh <- state
+		},
+		SystemID:         "",
+		ID:               "",
+		Logger:           smpp.DefaultLogger{},
+		Handler:          smpp.HandlerFunc(func(ctx *smpp.Context) {}),
+		Sequencer:        nil,
+		MapResetInterval: 0,
+	}
+	srv := smpp.NewServer(TestAddr, sessConf)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			t.Fatalf("Expected no error on server close, got %v", err)
+		}
+	}()
+
+	conn, err := net.Dial("tcp", TestAddr)
+	if err != nil {
+		t.Fatalf("Failed to connect to server: %v", err)
+	}
+	conn.Close()
+
+	select {
+	case state := <-stateChangeCh:
+		if state != smpp.StateClosing {
+			t.Errorf("Expected state to be StateClosing, got %v", state)
+		}
+	case <-time.After(10 * time.Second): // Adjust the duration as needed.
+		t.Fatalf("Timeout waiting for session state change")
+	}
+	srv.Close()
+	// You might want to shutdown the server here to end the test.
+	// srv.Close() or similar...
 }
