@@ -1,3 +1,3 @@
-module github.com/Derek-meng/smpp
+module github.com/majiddarvishan/smpp
 
 go 1.14

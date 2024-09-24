@@ -3,9 +3,9 @@
 
 ### Goals of this fork
 
-`github.com/Derek-meng/smpp` is a fork of `github.com/ajankovic/smpp` with the following changes:
+`github.com/majiddarvishan/smpp` is a fork of `github.com/ajankovic/smpp` with the following changes:
 
-- Fix Can't receive deliver_sm when Store and Forward Message Mode 
+- Fix Can't receive deliver_sm when Store and Forward Message Mode
 
 **smpp** is library contains implementation of [SMPP 3.4 protocol](http://opensmpp.org/specs/smppv34_gsmumts_ig_v10.pdf).
 
@@ -57,11 +57,11 @@ Although usable, project is still to be considered as _WORK IN PROGRESS_ until i
 
 You can use _go get_:
 
-    go get -u github.com/Derek-meng/smpp
+    go get -u github.com/majiddarvishan/smpp
 
 ## Usage
 
-In order to do any kind of interaction you first need to create an SMPP [Session](https://godoc.org/github.com/Derek-meng/smpp#Session). Session is the main carrier of the protocol and enforcer of the specification rules.
+In order to do any kind of interaction you first need to create an SMPP [Session](https://godoc.org/github.com/majiddarvishan/smpp#Session). Session is the main carrier of the protocol and enforcer of the specification rules.
 
 Naked session can be created with:
 

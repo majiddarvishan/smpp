@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Derek-meng/smpp/pdu"
+	"github.com/majiddarvishan/smpp/pdu"
 )
 
 var smppLogs bool
