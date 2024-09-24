@@ -258,6 +258,7 @@ func (sess *Session) serve() {
 
 		sess.mu.Lock()
 
+        //todo: I have to do better implementation
 		switch h.CommandID() {
 		case pdu.BindTransceiverID, pdu.BindTransmitterID, pdu.BindReceiverID:
 			sess.systemID = pdu.SystemID(p)
