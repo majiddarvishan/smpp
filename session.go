@@ -255,8 +255,14 @@ func (sess *Session) serve() {
 			sess.shutdown()
 			return
 		}
+
 		sess.mu.Lock()
-		sess.systemID = pdu.SystemID(p)
+
+		switch h.CommandID() {
+		case pdu.BindTransceiverID, pdu.BindTransmitterID, pdu.BindReceiverID:
+			sess.systemID = pdu.SystemID(p)
+		}
+
 		if err := sess.makeTransition(h.CommandID(), true); err != nil {
 			sess.conf.Logger.ErrorF("transitioning upon receive: %s %+v", sess, err)
 			sess.mu.Unlock()
