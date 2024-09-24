@@ -110,21 +110,21 @@ func TestESMESession(t *testing.T) {
 	sess := smpp.NewSession(conn, conf)
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
-	resp, err := sess.Send(ctx, bindTRx)
+	_, resp, err := sess.Send(ctx, bindTRx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if resp.CommandID() != pdu.BindTransceiverRespID {
 		t.Errorf("expected BindTransceiverRespID got %d", resp.CommandID())
 	}
-	resp, err = sess.Send(ctx, submitSm)
+	_, resp, err = sess.Send(ctx, submitSm)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if resp.CommandID() != pdu.SubmitSmRespID {
 		t.Errorf("expected SubmitSmRespID got %d", resp.CommandID())
 	}
-	resp, err = sess.Send(ctx, unbind)
+	_, resp, err = sess.Send(ctx, unbind)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,14 +161,14 @@ func TestESMESessionInvalidStatus(t *testing.T) {
 	sess := smpp.NewSession(conn, conf)
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
-	resp, err := sess.Send(ctx, bindTRx)
+	_, resp, err := sess.Send(ctx, bindTRx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if resp.CommandID() != pdu.BindTransceiverRespID {
 		t.Errorf("expected BindTransceiverRespID got %d", resp.CommandID())
 	}
-	resp, err = sess.Send(ctx, submitSm)
+	_, resp, err = sess.Send(ctx, submitSm)
 	if err == nil {
 		t.Errorf("Expected status error got nil")
 	}

@@ -148,6 +148,7 @@ type SessionConf struct {
 }
 
 type response struct {
+	hdr  pdu.Header
 	resp pdu.PDU
 	err  error
 }
@@ -206,6 +207,7 @@ func NewSession(rwc io.ReadWriteCloser, conf SessionConf) *Session {
 	}
 	sess.wg.Add(1)
 	go sess.serve()
+	go sess.resetSentMapPeriodically()
 	return sess
 }
 
@@ -242,8 +244,11 @@ func (sess *Session) serve() {
 	defer sess.wg.Done()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	sess.wg.Add(1)
-	go sess.resetSentMapPeriodically(ctx)
+
+	// todo: check what are these and why they are deleted
+	// sess.wg.Add(1)
+	// go sess.resetSentMapPeriodically(ctx)
+
 	for {
 		h, p, err := sess.dec.Decode()
 		if err != nil {
@@ -255,10 +260,9 @@ func (sess *Session) serve() {
 			sess.shutdown()
 			return
 		}
-
 		sess.mu.Lock()
 
-        //todo: I have to do better implementation
+		// todo: I have to do better implementation
 		switch h.CommandID() {
 		case pdu.BindTransceiverID, pdu.BindTransmitterID, pdu.BindReceiverID:
 			sess.systemID = pdu.SystemID(p)
@@ -289,6 +293,7 @@ func (sess *Session) serve() {
 			sess.mu.Unlock()
 
 			l <- response{
+				hdr:  h,
 				resp: p,
 				err:  toError(h.Status()),
 			}
@@ -320,6 +325,7 @@ func (sess *Session) handleRequest(ctx context.Context, h pdu.Header, req pdu.PD
 		Sess: sess,
 		ctx:  ctx,
 		seq:  h.Sequence(),
+		hdr:  h,
 		req:  req,
 	}
 	sess.conf.Handler.ServeSMPP(sessCtx)
@@ -364,7 +370,8 @@ func (sess *Session) setState(state SessionState) error {
 	}
 	switch sess.state {
 	case StateOpen:
-		if state != StateBinding && state != StateClosing {
+        // if state != StateBinding && state != StateClosing {
+		if state != StateBinding {
 			return fmt.Errorf("smpp: setting open session to invalid state %s", state)
 		}
 	case StateBinding:
@@ -399,24 +406,24 @@ func (sess *Session) setState(state SessionState) error {
 
 // Send writes PDU to the bounded connection effectively sending it to the peer.
 // Use context deadline to specify how much you would like to wait for the response.
-func (sess *Session) Send(ctx context.Context, req pdu.PDU) (pdu.PDU, error) {
+func (sess *Session) Send(ctx context.Context, req pdu.PDU, opts ...pdu.EncoderOption) (pdu.Header, pdu.PDU, error) {
 	if req == nil {
-		return nil, Error{Msg: "smpp: sending nil pdu"}
+		return nil, nil, Error{Msg: "smpp: sending nil pdu"}
 	}
 	sess.mu.Lock()
 	if len(sess.sent) == sess.conf.SendWinSize {
 		sess.mu.Unlock()
-		return nil, Error{Msg: "smpp: sending window closed", Temp: true}
+		return nil, nil, Error{Msg: "smpp: sending window closed", Temp: true}
 	}
 	if err := sess.makeTransition(req.CommandID(), false); err != nil {
 		sess.conf.Logger.ErrorF("transitioning before send: %s %+v", sess, err)
 		sess.mu.Unlock()
-		return nil, err
+		return nil, nil, err
 	}
-	seq, err := sess.enc.Encode(req)
+	seq, err := sess.enc.Encode(req, opts...)
 	if err != nil {
 		sess.mu.Unlock()
-		return nil, err
+		return nil, nil, err
 	}
 	l := make(chan response, 1)
 	sess.sent[seq] = l
@@ -425,14 +432,14 @@ func (sess *Session) Send(ctx context.Context, req pdu.PDU) (pdu.PDU, error) {
 	select {
 	case resp, ok := <-l:
 		if !ok {
-			return nil, SessionClosedBeforeReceiving
+			return nil, nil, SessionClosedBeforeReceiving
 		}
 		if resp.err != nil {
-			return resp.resp, resp.err
+			return resp.hdr, resp.resp, resp.err
 		}
-		return resp.resp, nil
+		return resp.hdr, resp.resp, nil
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return nil, nil, ctx.Err()
 	}
 }
 
@@ -546,13 +553,12 @@ func (sess *Session) NotifyClosed() <-chan struct{} {
 	return sess.closed
 }
 
-func (sess *Session) resetSentMapPeriodically(ctx context.Context) {
+func (sess *Session) resetSentMapPeriodically() {
 	ticker := time.NewTicker(sess.conf.MapResetInterval)
-	defer sess.wg.Done()
 	defer ticker.Stop()
 	for {
 		select {
-		case <-ctx.Done():
+		case <-sess.closed:
 			return
 		case <-ticker.C:
 			sess.mu.Lock()
