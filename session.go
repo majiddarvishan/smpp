@@ -275,7 +275,8 @@ func (sess *Session) serve() {
 		}
 		// Handle PDU requests.
 		if pdu.IsRequest(h.CommandID()) {
-			sess.conf.Logger.InfoF("received request: %s %s%+v", sess, p.CommandID(), p)
+			// sess.conf.Logger.InfoF("received request: %s %s%+v", sess, p.CommandID(), p)
+			sess.conf.Logger.InfoF("received request: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
 			if sess.reqCount == sess.conf.ReqWinSize {
 				sess.throttle(h.Sequence())
 			} else {
@@ -288,7 +289,8 @@ func (sess *Session) serve() {
 		}
 		// Handle PDU responses.
 		if l, ok := sess.sent[h.Sequence()]; ok {
-			sess.conf.Logger.InfoF("received response: %s %s%+v", sess, p.CommandID(), p)
+			// sess.conf.Logger.InfoF("received response: %s %s%+v", sess, p.CommandID(), p)
+			sess.conf.Logger.InfoF("received response: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
 			delete(sess.sent, h.Sequence())
 			sess.mu.Unlock()
 
@@ -370,7 +372,7 @@ func (sess *Session) setState(state SessionState) error {
 	}
 	switch sess.state {
 	case StateOpen:
-        // if state != StateBinding && state != StateClosing {
+		// if state != StateBinding && state != StateClosing {
 		if state != StateBinding {
 			return fmt.Errorf("smpp: setting open session to invalid state %s", state)
 		}

@@ -20,6 +20,10 @@ type Context struct {
 	close  bool
 }
 
+func (ctx *Context) DebugReq() string {
+	return fmt.Sprintf("%#v", ctx.req)
+}
+
 // SystemID returns SystemID of the bounded peer that request came from.
 func (ctx *Context) SystemID() string {
 	return ctx.Sess.conf.SystemID
