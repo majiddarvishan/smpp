@@ -38,7 +38,7 @@ func main() {
 		DestinationAddr: dstAddr,
 		ShortMessage:    msg,
 	}
-	resp, err := sess.Send(context.Background(), sm)
+	_, resp, err := sess.Send(context.Background(), sm)
 	if err != nil {
 		fail("Can't send message: %+v", err)
 	}

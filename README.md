@@ -1,6 +1,5 @@
 # SMPP 3.4 Library
 
-
 ### Goals of this fork
 
 `github.com/majiddarvishan/smpp` is a fork of `github.com/ajankovic/smpp` with the following changes:
@@ -24,21 +23,21 @@ Although usable, project is still to be considered as _WORK IN PROGRESS_ until i
 
 ## Feature description
 
-- [X] Smpp protocol integrity is enforced with the use of session states.
-- [X] Allow communication over tcp protocol.
-- [X] Pdu data structure should have access to all of it's elements.
-- [X] When client and server are connected session is created.
-- [X] When connection is terminated or unbinding is finished session is closed.
-- [X] Closing can be completed only after graceful handling of all remaining operations.
-- [X] Request window is the number of sent requests during a session that are waiting for the matching response from the other side.
-- [X] Size of the window is configurable if window is closed send should fail.
-- [X] Sending should timeout if response is not received in configured amount of time.
-- [X] Sender should wait for responses only for requests that have matching responses defined by the spec.
-- [X] Client should have an option to listen for outbind requests from server.
-- [X] Server should be able to rate limit client's requests.
-- [X] Session should handle sequence numbers.
-- [X] Provide logging for critical paths.
-- [X] Sessions should be uniquely identifiable.
+- [x] Smpp protocol integrity is enforced with the use of session states.
+- [x] Allow communication over tcp protocol.
+- [x] Pdu data structure should have access to all of it's elements.
+- [x] When client and server are connected session is created.
+- [x] When connection is terminated or unbinding is finished session is closed.
+- [x] Closing can be completed only after graceful handling of all remaining operations.
+- [x] Request window is the number of sent requests during a session that are waiting for the matching response from the other side.
+- [x] Size of the window is configurable if window is closed send should fail.
+- [x] Sending should timeout if response is not received in configured amount of time.
+- [x] Sender should wait for responses only for requests that have matching responses defined by the spec.
+- [x] Client should have an option to listen for outbind requests from server.
+- [x] Server should be able to rate limit client's requests.
+- [x] Session should handle sequence numbers.
+- [x] Provide logging for critical paths.
+- [x] Sessions should be uniquely identifiable.
 - [ ] Helpers for sending enquire_link in regular intervals.
 - [ ] If an SMPP entity receives an unrecognized PDU/command, it must return a generic_nack PDU indicating an invalid command_id in the command_status field of the header.
 - [ ] Provide stats about running session(s):
@@ -50,6 +49,7 @@ Although usable, project is still to be considered as _WORK IN PROGRESS_ until i
   - Session running time
   - Average send/response times
   - Rate of failures
+
 - [ ] Support all PDU commands defined by the specification.
 - [ ] Helper functions for common tasks.
 
@@ -104,4 +104,3 @@ If you want to handle incoming requests to the session specify SMPPHandler in se
             }
         }),
     }
-

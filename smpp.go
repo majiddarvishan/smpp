@@ -90,7 +90,7 @@ func bind(req pdu.PDU, sc SessionConf, bc BindConf) (*Session, error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	_, err = sess.Send(ctx, req)
+	_, _, err = sess.Send(ctx, req)
 	if err != nil {
 		return sess, err
 	}
@@ -144,7 +144,7 @@ func Unbind(ctx context.Context, sess *Session) error {
 	defer func() {
 		sess.Close()
 	}()
-	_, err := sess.Send(ctx, pdu.Unbind{})
+	_, _, err := sess.Send(ctx, pdu.Unbind{})
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func Unbind(ctx context.Context, sess *Session) error {
 
 // SendGenericNack is a helper function for sending GenericNack PDU.
 func SendGenericNack(ctx context.Context, sess *Session, p *pdu.GenericNack) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func SendGenericNack(ctx context.Context, sess *Session, p *pdu.GenericNack) err
 // SendBindRx is a helper function for sending BindRx PDU.
 func SendBindRx(ctx context.Context, sess *Session, p *pdu.BindRx) (*pdu.BindRxResp, error) {
 	var tresp *pdu.BindRxResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.BindRxResp)
 	}
@@ -175,7 +175,7 @@ func SendBindRx(ctx context.Context, sess *Session, p *pdu.BindRx) (*pdu.BindRxR
 
 // SendBindRxResp is a helper function for sending BindRxResp PDU.
 func SendBindRxResp(ctx context.Context, sess *Session, p *pdu.BindRxResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func SendBindRxResp(ctx context.Context, sess *Session, p *pdu.BindRxResp) error
 // SendBindTx is a helper function for sending BindTx PDU.
 func SendBindTx(ctx context.Context, sess *Session, p *pdu.BindTx) (*pdu.BindTxResp, error) {
 	var tresp *pdu.BindTxResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.BindTxResp)
 	}
@@ -197,7 +197,7 @@ func SendBindTx(ctx context.Context, sess *Session, p *pdu.BindTx) (*pdu.BindTxR
 
 // SendBindTxResp is a helper function for sending BindTxResp PDU.
 func SendBindTxResp(ctx context.Context, sess *Session, p *pdu.BindTxResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func SendBindTxResp(ctx context.Context, sess *Session, p *pdu.BindTxResp) error
 // SendQuerySm is a helper function for sending QuerySm PDU.
 func SendQuerySm(ctx context.Context, sess *Session, p *pdu.QuerySm) (*pdu.QuerySmResp, error) {
 	var tresp *pdu.QuerySmResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.QuerySmResp)
 	}
@@ -219,7 +219,7 @@ func SendQuerySm(ctx context.Context, sess *Session, p *pdu.QuerySm) (*pdu.Query
 
 // SendQuerySmResp is a helper function for sending QuerySmResp PDU.
 func SendQuerySmResp(ctx context.Context, sess *Session, p *pdu.QuerySmResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ func SendQuerySmResp(ctx context.Context, sess *Session, p *pdu.QuerySmResp) err
 // SendSubmitSm is a helper function for sending SubmitSm PDU.
 func SendSubmitSm(ctx context.Context, sess *Session, p *pdu.SubmitSm) (*pdu.SubmitSmResp, error) {
 	var tresp *pdu.SubmitSmResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.SubmitSmResp)
 	}
@@ -241,7 +241,7 @@ func SendSubmitSm(ctx context.Context, sess *Session, p *pdu.SubmitSm) (*pdu.Sub
 
 // SendSubmitSmResp is a helper function for sending SubmitSmResp PDU.
 func SendSubmitSmResp(ctx context.Context, sess *Session, p *pdu.SubmitSmResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func SendSubmitSmResp(ctx context.Context, sess *Session, p *pdu.SubmitSmResp) e
 // SendDeliverSm is a helper function for sending DeliverSm PDU.
 func SendDeliverSm(ctx context.Context, sess *Session, p *pdu.DeliverSm) (*pdu.DeliverSmResp, error) {
 	var tresp *pdu.DeliverSmResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.DeliverSmResp)
 	}
@@ -263,7 +263,7 @@ func SendDeliverSm(ctx context.Context, sess *Session, p *pdu.DeliverSm) (*pdu.D
 
 // SendDeliverSmResp is a helper function for sending DeliverSmResp PDU.
 func SendDeliverSmResp(ctx context.Context, sess *Session, p *pdu.DeliverSmResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -273,7 +273,7 @@ func SendDeliverSmResp(ctx context.Context, sess *Session, p *pdu.DeliverSmResp)
 // SendUnbind is a helper function for sending Unbind PDU.
 func SendUnbind(ctx context.Context, sess *Session, p *pdu.Unbind) (*pdu.UnbindResp, error) {
 	var tresp *pdu.UnbindResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.UnbindResp)
 	}
@@ -285,7 +285,7 @@ func SendUnbind(ctx context.Context, sess *Session, p *pdu.Unbind) (*pdu.UnbindR
 
 // SendUnbindResp is a helper function for sending UnbindResp PDU.
 func SendUnbindResp(ctx context.Context, sess *Session, p *pdu.UnbindResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -295,7 +295,7 @@ func SendUnbindResp(ctx context.Context, sess *Session, p *pdu.UnbindResp) error
 // SendReplaceSm is a helper function for sending ReplaceSm PDU.
 func SendReplaceSm(ctx context.Context, sess *Session, p *pdu.ReplaceSm) (*pdu.ReplaceSmResp, error) {
 	var tresp *pdu.ReplaceSmResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.ReplaceSmResp)
 	}
@@ -307,7 +307,7 @@ func SendReplaceSm(ctx context.Context, sess *Session, p *pdu.ReplaceSm) (*pdu.R
 
 // SendReplaceSmResp is a helper function for sending ReplaceSmResp PDU.
 func SendReplaceSmResp(ctx context.Context, sess *Session, p *pdu.ReplaceSmResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -317,7 +317,7 @@ func SendReplaceSmResp(ctx context.Context, sess *Session, p *pdu.ReplaceSmResp)
 // SendCancelSm is a helper function for sending CancelSm PDU.
 func SendCancelSm(ctx context.Context, sess *Session, p *pdu.CancelSm) (*pdu.CancelSmResp, error) {
 	var tresp *pdu.CancelSmResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.CancelSmResp)
 	}
@@ -329,7 +329,7 @@ func SendCancelSm(ctx context.Context, sess *Session, p *pdu.CancelSm) (*pdu.Can
 
 // SendCancelSmResp is a helper function for sending CancelSmResp PDU.
 func SendCancelSmResp(ctx context.Context, sess *Session, p *pdu.CancelSmResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -339,7 +339,7 @@ func SendCancelSmResp(ctx context.Context, sess *Session, p *pdu.CancelSmResp) e
 // SendBindTRx is a helper function for sending BindTRx PDU.
 func SendBindTRx(ctx context.Context, sess *Session, p *pdu.BindTRx) (*pdu.BindTRxResp, error) {
 	var tresp *pdu.BindTRxResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.BindTRxResp)
 	}
@@ -351,7 +351,7 @@ func SendBindTRx(ctx context.Context, sess *Session, p *pdu.BindTRx) (*pdu.BindT
 
 // SendBindTRxResp is a helper function for sending BindTRxResp PDU.
 func SendBindTRxResp(ctx context.Context, sess *Session, p *pdu.BindTRxResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -360,7 +360,7 @@ func SendBindTRxResp(ctx context.Context, sess *Session, p *pdu.BindTRxResp) err
 
 // SendOutbind is a helper function for sending Outbind PDU.
 func SendOutbind(ctx context.Context, sess *Session, p *pdu.Outbind) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -370,7 +370,7 @@ func SendOutbind(ctx context.Context, sess *Session, p *pdu.Outbind) error {
 // SendEnquireLink is a helper function for sending EnquireLink PDU.
 func SendEnquireLink(ctx context.Context, sess *Session, p *pdu.EnquireLink) (*pdu.EnquireLinkResp, error) {
 	var tresp *pdu.EnquireLinkResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.EnquireLinkResp)
 	}
@@ -382,7 +382,7 @@ func SendEnquireLink(ctx context.Context, sess *Session, p *pdu.EnquireLink) (*p
 
 // SendEnquireLinkResp is a helper function for sending EnquireLinkResp PDU.
 func SendEnquireLinkResp(ctx context.Context, sess *Session, p *pdu.EnquireLinkResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -392,7 +392,7 @@ func SendEnquireLinkResp(ctx context.Context, sess *Session, p *pdu.EnquireLinkR
 // SendSubmitMulti is a helper function for sending SubmitMulti PDU.
 func SendSubmitMulti(ctx context.Context, sess *Session, p *pdu.SubmitMulti) (*pdu.SubmitMultiResp, error) {
 	var tresp *pdu.SubmitMultiResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.SubmitMultiResp)
 	}
@@ -404,7 +404,7 @@ func SendSubmitMulti(ctx context.Context, sess *Session, p *pdu.SubmitMulti) (*p
 
 // SendSubmitMultiResp is a helper function for sending SubmitMultiResp PDU.
 func SendSubmitMultiResp(ctx context.Context, sess *Session, p *pdu.SubmitMultiResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -413,7 +413,7 @@ func SendSubmitMultiResp(ctx context.Context, sess *Session, p *pdu.SubmitMultiR
 
 // SendAlertNotification is a helper function for sending AlertNotification PDU.
 func SendAlertNotification(ctx context.Context, sess *Session, p *pdu.AlertNotification) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -423,7 +423,7 @@ func SendAlertNotification(ctx context.Context, sess *Session, p *pdu.AlertNotif
 // SendDataSm is a helper function for sending DataSm PDU.
 func SendDataSm(ctx context.Context, sess *Session, p *pdu.DataSm) (*pdu.DataSmResp, error) {
 	var tresp *pdu.DataSmResp
-	resp, err := sess.Send(ctx, p)
+	_, resp, err := sess.Send(ctx, p)
 	if resp != nil {
 		tresp = resp.(*pdu.DataSmResp)
 	}
@@ -435,7 +435,7 @@ func SendDataSm(ctx context.Context, sess *Session, p *pdu.DataSm) (*pdu.DataSmR
 
 // SendDataSmResp is a helper function for sending DataSmResp PDU.
 func SendDataSmResp(ctx context.Context, sess *Session, p *pdu.DataSmResp) error {
-	_, err := sess.Send(ctx, p)
+	_, _, err := sess.Send(ctx, p)
 	if err != nil {
 		return err
 	}
