@@ -14,6 +14,7 @@ type Context struct {
 	status pdu.Status
 	ctx    context.Context
 	seq    uint32
+	hdr    pdu.Header
 	req    pdu.PDU
 	resp   pdu.PDU
 	close  bool
@@ -77,6 +78,10 @@ func (ctx *Context) Respond(resp pdu.PDU, status pdu.Status) error {
 // CloseSession will initiate session shutdown after handler returns.
 func (ctx *Context) CloseSession() {
 	ctx.close = true
+}
+
+func (ctx *Context) Header() pdu.Header {
+	return ctx.hdr
 }
 
 // GenericNack returns generic request PDU as pdu.GenericNack.
