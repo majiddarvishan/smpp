@@ -54,6 +54,11 @@ func (ctx *Context) Status() pdu.Status {
 	return ctx.status
 }
 
+// Status returns status of the current request.
+func (ctx *Context) Sequence() uint32 {
+	return ctx.seq
+}
+
 // Respond sends pdu to the bounded peer.
 func (ctx *Context) Respond(resp pdu.PDU, status pdu.Status) error {
 	ctx.status = status
