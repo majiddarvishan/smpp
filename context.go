@@ -59,31 +59,6 @@ func (ctx *Context) Sequence() uint32 {
 	return ctx.seq
 }
 
-// Respond sends pdu to the bounded peer.
-func (ctx *Context) Respond(resp pdu.PDU, status pdu.Status) error {
-	ctx.status = status
-	ctx.resp = resp
-	if resp == nil {
-		return errors.New("smpp: responding with nil PDU")
-	}
-
-	ctx.Sess.mu.Lock()
-	if err := ctx.Sess.makeTransition(resp.CommandID(), false); err != nil {
-		ctx.Sess.conf.Logger.ErrorF("transitioning resp pdu: %s %+v", ctx.Sess, err)
-		ctx.Sess.mu.Unlock()
-		return err
-	}
-	if _, err := ctx.Sess.enc.Encode(resp, pdu.EncodeStatus(status), pdu.EncodeSeq(ctx.seq)); err != nil {
-		ctx.Sess.conf.Logger.ErrorF("error encoding pdu: %s %+v", ctx.Sess, err)
-		ctx.Sess.mu.Unlock()
-		return err
-	}
-	ctx.Sess.conf.Logger.InfoF("sent response: %s %s %+v", ctx.Sess, resp.CommandID(), resp)
-	ctx.Sess.mu.Unlock()
-
-	return nil
-}
-
 // CloseSession will initiate session shutdown after handler returns.
 func (ctx *Context) CloseSession() {
 	ctx.close = true
@@ -307,4 +282,41 @@ func (ctx *Context) DataSmResp() (*pdu.DataSmResp, error) {
 		return p, nil
 	}
 	return nil, fmt.Errorf("smpp: invalid cast PDU is of type %s", ctx.req.CommandID())
+}
+
+// Respond sends pdu to the bounded peer.
+func (ctx *Context) Respond(resp pdu.PDU, status pdu.Status) error {
+	ctx.status = status
+	ctx.resp = resp
+	if resp == nil {
+		return errors.New("smpp: responding with nil PDU")
+	}
+
+	ctx.Sess.mu.Lock()
+	if err := ctx.Sess.makeTransition(resp.CommandID(), false); err != nil {
+		ctx.Sess.conf.Logger.ErrorF("transitioning resp pdu: %s %+v", ctx.Sess, err)
+		ctx.Sess.mu.Unlock()
+		return err
+	}
+	if _, err := ctx.Sess.enc.Encode(resp, pdu.EncodeStatus(status), pdu.EncodeSeq(ctx.seq)); err != nil {
+		ctx.Sess.conf.Logger.ErrorF("error encoding pdu: %s %+v", ctx.Sess, err)
+		ctx.Sess.mu.Unlock()
+		return err
+	}
+	ctx.Sess.conf.Logger.InfoF("sent response: %s %s %+v", ctx.Sess, resp.CommandID(), resp)
+	ctx.Sess.mu.Unlock()
+
+	return nil
+}
+
+func (ctx *Context) SendDeliverSm(p *pdu.DeliverSm) (*pdu.DeliverSmResp, error) {
+	var tresp *pdu.DeliverSmResp
+	_, resp, err := ctx.Sess.Send(ctx.ctx, p)
+	if resp != nil {
+		tresp = resp.(*pdu.DeliverSmResp)
+	}
+	if err != nil {
+		return tresp, err
+	}
+	return tresp, nil
 }
