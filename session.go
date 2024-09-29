@@ -342,7 +342,7 @@ func (sess *Session) handleRequest(ctx context.Context, h pdu.Header, req pdu.PD
 		ctx:  ctx,
 		seq:  h.Sequence(),
 		hdr:  h,
-		req:  req,
+		pdu:  req,
 	}
 	sess.conf.RequestHandler.ServeSMPP(sessCtx)
 
@@ -365,7 +365,7 @@ func (sess *Session) handleResponse(ctx context.Context, h pdu.Header, resp pdu.
 		ctx:  ctx,
 		seq:  h.Sequence(),
 		hdr:  h,
-		resp:  resp,
+		pdu:  resp,
 	}
 	sess.conf.ResponseHandler.ServeSMPP(sessCtx)
 
@@ -445,41 +445,42 @@ func (sess *Session) setState(state SessionState) error {
 
 // Send writes PDU to the bounded connection effectively sending it to the peer.
 // Use context deadline to specify how much you would like to wait for the response.
-func (sess *Session) Send(ctx context.Context, req pdu.PDU, opts ...pdu.EncoderOption) (pdu.Header, pdu.PDU, error) {
+func (sess *Session) Send(ctx context.Context, req pdu.PDU, opts ...pdu.EncoderOption) (uint32, error) {
 	if req == nil {
-		return nil, nil, Error{Msg: "smpp: sending nil pdu"}
+		return 0, Error{Msg: "smpp: sending nil pdu"}
 	}
 	sess.mu.Lock()
 	if len(sess.sent) == sess.conf.SendWinSize {
 		sess.mu.Unlock()
-		return nil, nil, Error{Msg: "smpp: sending window closed", Temp: true}
+		return 0, Error{Msg: "smpp: sending window closed", Temp: true}
 	}
 	if err := sess.makeTransition(req.CommandID(), false); err != nil {
 		sess.conf.Logger.ErrorF("transitioning before send: %s %+v", sess, err)
 		sess.mu.Unlock()
-		return nil, nil, err
+		return 0, err
 	}
 	seq, err := sess.enc.Encode(req, opts...)
 	if err != nil {
 		sess.mu.Unlock()
-		return nil, nil, err
+		return 0, err
 	}
 	l := make(chan response, 1)
 	sess.sent[seq] = l
 	sess.conf.Logger.InfoF("request sent: %s %s%+v", sess, req.CommandID(), req)
 	sess.mu.Unlock()
-	select {
-	case resp, ok := <-l:
-		if !ok {
-			return nil, nil, SessionClosedBeforeReceiving
-		}
-		if resp.err != nil {
-			return resp.hdr, resp.resp, resp.err
-		}
-		return resp.hdr, resp.resp, nil
-	case <-ctx.Done():
-		return nil, nil, ctx.Err()
-	}
+    return seq, nil
+	// select {
+	// case resp, ok := <-l:
+	// 	if !ok {
+	// 		return nil, nil, SessionClosedBeforeReceiving
+	// 	}
+	// 	if resp.err != nil {
+	// 		return resp.hdr, resp.resp, resp.err
+	// 	}
+	// 	return resp.hdr, resp.resp, nil
+	// case <-ctx.Done():
+	// 	return nil, nil, ctx.Err()
+	// }
 }
 
 // makeTransition checks if processing pdu ID in the current session state is valid operation,
