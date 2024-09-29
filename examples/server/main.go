@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	sessConf := smpp.SessionConf{
-		Handler: smpp.HandlerFunc(func(ctx *smpp.Context) {
+		RequestHandler: smpp.RequestHandlerFunc(func(ctx *smpp.Context) {
 			switch ctx.CommandID() {
 			case pdu.BindTransceiverID:
 				btrx, err := ctx.BindTRx()
@@ -54,6 +54,16 @@ func main() {
 					fail("Server can't respond to the submit_sm request: %+v", err)
 				}
 				ctx.CloseSession()
+			}
+		}),
+        ResponseHandler: smpp.ResponseHandlerFunc(func(ctx *smpp.Context) {
+			switch ctx.CommandID() {
+			case pdu.DeliverSmRespID:
+				_, err := ctx.DeliverSmResp()
+				if err != nil {
+					fail("Invalid PDU in context error: %+v", err)
+				}
+				fmt.Fprintf(os.Stdout, "Recieve DeliverSmResp\n")
 			}
 		}),
 	}

@@ -100,11 +100,19 @@ type Handler interface {
 	ServeSMPP(ctx *Context)
 }
 
-// HandlerFunc wraps func into Handler.
-type HandlerFunc func(ctx *Context)
+// RequestHandlerFunc wraps func into Handler.
+type RequestHandlerFunc func(ctx *Context)
 
 // ServeSMPP implements Handler interface.
-func (hc HandlerFunc) ServeSMPP(ctx *Context) {
+func (hc RequestHandlerFunc) ServeSMPP(ctx *Context) {
+	hc(ctx)
+}
+
+// ResponseHandlerFunc wraps func into Handler.
+type ResponseHandlerFunc func(ctx *Context)
+
+// ServeSMPP implements Handler interface.
+func (hc ResponseHandlerFunc) ServeSMPP(ctx *Context) {
 	hc(ctx)
 }
 
@@ -131,16 +139,17 @@ type RemoteAddresser interface {
 
 // SessionConf structured session configuration.
 type SessionConf struct {
-	Type          SessionType
-	SendWinSize   int
-	ReqWinSize    int
-	WindowTimeout time.Duration
-	SessionState  func(sessionID, systemID string, state SessionState)
-	SystemID      string
-	ID            string
-	Logger        Logger
-	Handler       Handler
-	Sequencer     pdu.Sequencer
+	Type            SessionType
+	SendWinSize     int
+	ReqWinSize      int
+	WindowTimeout   time.Duration
+	SessionState    func(sessionID, systemID string, state SessionState)
+	SystemID        string
+	ID              string
+	Logger          Logger
+	RequestHandler  Handler
+	ResponseHandler Handler
+	Sequencer       pdu.Sequencer
 	// MapResetInterval specifies the duration after which the session's map will be recreated
 	// to mitigate potential memory growth. Setting this to a positive duration can help
 	// manage memory usage, especially when large amounts of data are added and removed from the map.
@@ -181,8 +190,11 @@ func NewSession(rwc io.ReadWriteCloser, conf SessionConf) *Session {
 	if conf.Logger == nil {
 		conf.Logger = DefaultLogger{}
 	}
-	if conf.Handler == nil {
-		conf.Handler = &defaultHandler{}
+	if conf.RequestHandler == nil {
+		conf.RequestHandler = &defaultHandler{}
+	}
+    if conf.ResponseHandler == nil {
+		conf.ResponseHandler = &defaultHandler{}
 	}
 	if conf.WindowTimeout == 0 {
 		conf.WindowTimeout = 10 * time.Second
@@ -275,7 +287,6 @@ func (sess *Session) serve() {
 		}
 		// Handle PDU requests.
 		if pdu.IsRequest(h.CommandID()) {
-			// sess.conf.Logger.InfoF("received request: %s %s%+v", sess, p.CommandID(), p)
 			sess.conf.Logger.InfoF("received request: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
 			if sess.reqCount == sess.conf.ReqWinSize {
 				sess.throttle(h.Sequence())
@@ -288,20 +299,23 @@ func (sess *Session) serve() {
 			continue
 		}
 		// Handle PDU responses.
-		if l, ok := sess.sent[h.Sequence()]; ok {
-			// sess.conf.Logger.InfoF("received response: %s %s%+v", sess, p.CommandID(), p)
+		// if l, ok := sess.sent[h.Sequence()]; ok {
+		if _, ok := sess.sent[h.Sequence()]; ok {
 			sess.conf.Logger.InfoF("received response: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
 			delete(sess.sent, h.Sequence())
+
+			go sess.handleResponse(ctx, h, p)
+
 			sess.mu.Unlock()
 
-			l <- response{
-				hdr:  h,
-				resp: p,
-				err:  toError(h.Status()),
-			}
+			// l <- response{
+			// 	hdr:  h,
+			// 	resp: p,
+			// 	err:  toError(h.Status()),
+			// }
 			continue
 		}
-		sess.conf.Logger.ErrorF("unexpected response: %s %s%+v", sess, p.CommandID(), p)
+		sess.conf.Logger.ErrorF("unexpected response: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
 		sess.mu.Unlock()
 	}
 }
@@ -330,7 +344,30 @@ func (sess *Session) handleRequest(ctx context.Context, h pdu.Header, req pdu.PD
 		hdr:  h,
 		req:  req,
 	}
-	sess.conf.Handler.ServeSMPP(sessCtx)
+	sess.conf.RequestHandler.ServeSMPP(sessCtx)
+
+	if sessCtx.close {
+		sess.shutdown()
+	}
+}
+
+func (sess *Session) handleResponse(ctx context.Context, h pdu.Header, resp pdu.PDU) {
+	// ctx, cancel := context.WithTimeout(ctx, sess.conf.WindowTimeout)
+	// defer func() {
+	// 	cancel()
+	// 	sess.mu.Lock()
+	// 	sess.reqCount--
+	// 	sess.mu.Unlock()
+	// 	sess.wg.Done()
+	// }()
+	sessCtx := &Context{
+		Sess: sess,
+		ctx:  ctx,
+		seq:  h.Sequence(),
+		hdr:  h,
+		resp:  resp,
+	}
+	sess.conf.ResponseHandler.ServeSMPP(sessCtx)
 
 	if sessCtx.close {
 		sess.shutdown()
