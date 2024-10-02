@@ -308,6 +308,30 @@ func (ctx *Context) Respond(resp pdu.PDU, status pdu.Status) error {
 	return nil
 }
 
+func (ctx *Context) Respond2(resp pdu.PDU, seq uint32, status pdu.Status) error {
+	ctx.status = status
+	ctx.pdu = resp
+	if resp == nil {
+		return errors.New("smpp: responding with nil PDU")
+	}
+
+	ctx.Sess.mu.Lock()
+	if err := ctx.Sess.makeTransition(resp.CommandID(), false); err != nil {
+		ctx.Sess.conf.Logger.ErrorF("transitioning resp pdu: %s %+v", ctx.Sess, err)
+		ctx.Sess.mu.Unlock()
+		return err
+	}
+	if _, err := ctx.Sess.enc.Encode(resp, pdu.EncodeStatus(status), pdu.EncodeSeq(seq)); err != nil {
+		ctx.Sess.conf.Logger.ErrorF("error encoding pdu: %s %+v", ctx.Sess, err)
+		ctx.Sess.mu.Unlock()
+		return err
+	}
+	ctx.Sess.conf.Logger.InfoF("sent response: %s %s %+v", ctx.Sess, resp.CommandID(), resp)
+	ctx.Sess.mu.Unlock()
+
+	return nil
+}
+
 func (ctx *Context) SendRequest(p pdu.PDU) (uint32, error) {
 	seq, err := ctx.Sess.Send(ctx.ctx, p)
     return seq, err
