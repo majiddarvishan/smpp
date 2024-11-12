@@ -287,7 +287,8 @@ func (sess *Session) serve() {
 		}
 		// Handle PDU requests.
 		if pdu.IsRequest(h.CommandID()) {
-			sess.conf.Logger.InfoF("received request: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
+			// sess.conf.Logger.InfoF("received request: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
+            sess.conf.Logger.InfoF("received request: %s %s, \nheader:\n%vbody\n%+v", sess, p.CommandID(), h, p)
 			if sess.reqCount == sess.conf.ReqWinSize {
 				sess.throttle(h.Sequence())
 			} else {
@@ -301,7 +302,8 @@ func (sess *Session) serve() {
 		// Handle PDU responses.
 		// if l, ok := sess.sent[h.Sequence()]; ok {
 		if _, ok := sess.sent[h.Sequence()]; ok {
-			sess.conf.Logger.InfoF("received response: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
+			// sess.conf.Logger.InfoF("received response: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
+            sess.conf.Logger.InfoF("received response: %s %s, \nheader:\n%vbody\n%+v", sess, p.CommandID(), h, p)
 			delete(sess.sent, h.Sequence())
 
 			go sess.handleResponse(ctx, h, p)
@@ -466,7 +468,9 @@ func (sess *Session) Send(ctx context.Context, req pdu.PDU, opts ...pdu.EncoderO
 	}
 	l := make(chan response, 1)
 	sess.sent[seq] = l
-	sess.conf.Logger.InfoF("request sent: %s %s%+v", sess, req.CommandID(), req)
+	// sess.conf.Logger.InfoF("request sent: %s %s%+v", sess, req.CommandID(), req)
+    // sess.conf.Logger.InfoF("request sent: %s %s, \nheader:\n%vbody\n%+v", sess, req.CommandID(), ctx.hdr, req)
+    sess.conf.Logger.InfoF("request sent: %s %s, \nsequence: %d\nbody\n%+v", sess, req.CommandID(), seq, req)
 	sess.mu.Unlock()
     return seq, nil
 	// select {

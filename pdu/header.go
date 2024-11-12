@@ -4,6 +4,8 @@ import (
 	"encoding"
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"strings"
 )
 
 // Header represents PDU header.
@@ -51,4 +53,15 @@ func (h *header) UnmarshalBinary(body []byte) error {
 	h.status = Status(binary.BigEndian.Uint32(body[8:12]))
 	h.sequence = binary.BigEndian.Uint32(body[12:16])
 	return nil
+}
+
+func (h *header) String() string {
+    var sb strings.Builder
+    sb.WriteString("{\n")
+    sb.WriteString(fmt.Sprintf(" length: %d\n", h.length))
+    sb.WriteString(fmt.Sprintf(" commandID: %d\n", h.commandID))
+    sb.WriteString(fmt.Sprintf(" status: %d\n", h.status))
+    sb.WriteString(fmt.Sprintf(" sequence: %d\n", h.sequence))
+    sb.WriteString("}\n")
+    return sb.String()
 }

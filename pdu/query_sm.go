@@ -2,6 +2,8 @@ package pdu
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 	"time"
 
 	smpptime "github.com/majiddarvishan/smpp/time"
@@ -67,6 +69,22 @@ func (p *QuerySm) UnmarshalBinary(body []byte) error {
 	return nil
 }
 
+func (p QuerySm) String() string {
+    val := reflect.ValueOf(p)
+    typ := reflect.TypeOf(p)
+
+    var sb strings.Builder
+    sb.WriteString("{\n")
+
+    for i := 0; i < val.NumField(); i++ {
+        field := typ.Field(i)
+        value := val.Field(i)
+        sb.WriteString(fmt.Sprintf(" %s: %v\n", field.Name, value))
+    }
+    sb.WriteString("}\n")
+    return sb.String()
+}
+
 // QuerySmResp holds response to query_sm PDU.
 type QuerySmResp struct {
 	MessageID    string
@@ -123,4 +141,20 @@ func (p *QuerySmResp) UnmarshalBinary(body []byte) error {
 	}
 	p.ErrorCode = int(b)
 	return nil
+}
+
+func (p QuerySmResp) String() string {
+    val := reflect.ValueOf(p)
+    typ := reflect.TypeOf(p)
+
+    var sb strings.Builder
+    sb.WriteString("{\n")
+
+    for i := 0; i < val.NumField(); i++ {
+        field := typ.Field(i)
+        value := val.Field(i)
+        sb.WriteString(fmt.Sprintf(" %s: %v\n", field.Name, value))
+    }
+    sb.WriteString("}\n")
+    return sb.String()
 }

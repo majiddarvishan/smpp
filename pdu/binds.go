@@ -2,6 +2,7 @@ package pdu
 
 import (
 	"fmt"
+	"strings"
 )
 
 // BindTx binding pdu in transmitter mode.
@@ -54,6 +55,20 @@ func (p *BindTx) UnmarshalBinary(body []byte) error {
 	)
 }
 
+func (p *BindTx) String() string {
+    var sb strings.Builder
+    sb.WriteString("{\n")
+    sb.WriteString(fmt.Sprintf(" SystemID: %s\n", p.SystemID))
+    sb.WriteString(fmt.Sprintf(" Password: %s\n", p.Password))
+    sb.WriteString(fmt.Sprintf(" SystemType: %s\n", p.SystemType))
+    sb.WriteString(fmt.Sprintf(" InterfaceVersion: %d\n", p.InterfaceVersion))
+    sb.WriteString(fmt.Sprintf(" AddrTon: %d\n", p.AddrTon))
+    sb.WriteString(fmt.Sprintf(" AddrNpi: %d\n", p.AddrNpi))
+    sb.WriteString(fmt.Sprintf(" AddressRange: %s\n", p.AddressRange))
+    sb.WriteString("}\n")
+    return sb.String()
+}
+
 // BindTxResp bind response.
 type BindTxResp struct {
 	SystemID string
@@ -75,6 +90,14 @@ func (p *BindTxResp) UnmarshalBinary(body []byte) error {
 	var err error
 	p.SystemID, p.Options, err = cStringOptsRespUnmarshal(body)
 	return err
+}
+
+func (p *BindTxResp) String() string {
+    var sb strings.Builder
+    sb.WriteString("{\n")
+    sb.WriteString(fmt.Sprintf(" SystemID: %s\n", p.SystemID))
+    sb.WriteString("}\n")
+    return sb.String()
 }
 
 // BindRx binding pdu in receiver mode.
@@ -127,6 +150,20 @@ func (p *BindRx) UnmarshalBinary(body []byte) error {
 	)
 }
 
+func (p *BindRx) String() string {
+    var sb strings.Builder
+    sb.WriteString("{\n")
+    sb.WriteString(fmt.Sprintf(" SystemID: %s\n", p.SystemID))
+    sb.WriteString(fmt.Sprintf(" Password: %s\n", p.Password))
+    sb.WriteString(fmt.Sprintf(" SystemType: %s\n", p.SystemType))
+    sb.WriteString(fmt.Sprintf(" InterfaceVersion: %d\n", p.InterfaceVersion))
+    sb.WriteString(fmt.Sprintf(" AddrTon: %d\n", p.AddrTon))
+    sb.WriteString(fmt.Sprintf(" AddrNpi: %d\n", p.AddrNpi))
+    sb.WriteString(fmt.Sprintf(" AddressRange: %s\n", p.AddressRange))
+    sb.WriteString("}\n")
+    return sb.String()
+}
+
 // BindRxResp bind response.
 type BindRxResp struct {
 	SystemID string
@@ -148,6 +185,14 @@ func (p *BindRxResp) UnmarshalBinary(body []byte) error {
 	var err error
 	p.SystemID, p.Options, err = cStringOptsRespUnmarshal(body)
 	return err
+}
+
+func (p *BindRxResp) String() string {
+    var sb strings.Builder
+    sb.WriteString("{\n")
+    sb.WriteString(fmt.Sprintf(" SystemID: %s\n", p.SystemID))
+    sb.WriteString("}\n")
+    return sb.String()
 }
 
 // BindTRx binding PDU in receiver mode.
@@ -200,6 +245,20 @@ func (p *BindTRx) UnmarshalBinary(body []byte) error {
 	)
 }
 
+func (p *BindTRx) String() string {
+    var sb strings.Builder
+    sb.WriteString("{\n")
+    sb.WriteString(fmt.Sprintf(" SystemID: %s\n", p.SystemID))
+    sb.WriteString(fmt.Sprintf(" Password: %s\n", p.Password))
+    sb.WriteString(fmt.Sprintf(" SystemType: %s\n", p.SystemType))
+    sb.WriteString(fmt.Sprintf(" InterfaceVersion: %d\n", p.InterfaceVersion))
+    sb.WriteString(fmt.Sprintf(" AddrTon: %d\n", p.AddrTon))
+    sb.WriteString(fmt.Sprintf(" AddrNpi: %d\n", p.AddrNpi))
+    sb.WriteString(fmt.Sprintf(" AddressRange: %s\n", p.AddressRange))
+    sb.WriteString("}\n")
+    return sb.String()
+}
+
 // BindTRxResp bind response.
 type BindTRxResp struct {
 	SystemID string
@@ -221,6 +280,14 @@ func (p *BindTRxResp) UnmarshalBinary(body []byte) error {
 	var err error
 	p.SystemID, p.Options, err = cStringOptsRespUnmarshal(body)
 	return err
+}
+
+func (p *BindTRxResp) String() string {
+    var sb strings.Builder
+    sb.WriteString("{\n")
+    sb.WriteString(fmt.Sprintf(" SystemID: %s\n", p.SystemID))
+    sb.WriteString("}\n")
+    return sb.String()
 }
 
 func marshalBind(systemID, password, systemType string, interfaceVer, addrTon, addrNpi int, addrRange string) ([]byte, error) {

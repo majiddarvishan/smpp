@@ -3,6 +3,8 @@ package pdu
 import (
 	"fmt"
 	"io/ioutil"
+	"reflect"
+	"strings"
 	"time"
 
 	smpptime "github.com/majiddarvishan/smpp/time"
@@ -196,6 +198,22 @@ func (p *DeliverSm) UnmarshalBinary(body []byte) error {
 	return nil
 }
 
+func (p DeliverSm) String() string {
+    val := reflect.ValueOf(p)
+    typ := reflect.TypeOf(p)
+
+    var sb strings.Builder
+    sb.WriteString("{\n")
+
+    for i := 0; i < val.NumField(); i++ {
+        field := typ.Field(i)
+        value := val.Field(i)
+        sb.WriteString(fmt.Sprintf(" %s: %v\n", field.Name, value))
+    }
+    sb.WriteString("}\n")
+    return sb.String()
+}
+
 // DeliverSmResp contains mandatory fields for deliver_sm response.
 type DeliverSmResp struct {
 	MessageID string
@@ -214,4 +232,20 @@ func (p DeliverSmResp) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements encoding.BinaryUnmarshaler interface.
 func (p *DeliverSmResp) UnmarshalBinary(body []byte) error {
 	return nil
+}
+
+func (p DeliverSmResp) String() string {
+    val := reflect.ValueOf(p)
+    typ := reflect.TypeOf(p)
+
+    var sb strings.Builder
+    sb.WriteString("{\n")
+
+    for i := 0; i < val.NumField(); i++ {
+        field := typ.Field(i)
+        value := val.Field(i)
+        sb.WriteString(fmt.Sprintf(" %s: %v\n", field.Name, value))
+    }
+    sb.WriteString("}\n")
+    return sb.String()
 }

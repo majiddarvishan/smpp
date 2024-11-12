@@ -2,6 +2,8 @@ package pdu
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 	"time"
 
 	smpptime "github.com/majiddarvishan/smpp/time"
@@ -192,6 +194,22 @@ func (p *SubmitSm) UnmarshalBinary(body []byte) error {
 	return nil
 }
 
+func (p SubmitSm) String() string {
+    val := reflect.ValueOf(p)
+    typ := reflect.TypeOf(p)
+
+    var sb strings.Builder
+    sb.WriteString("{\n")
+
+    for i := 0; i < val.NumField(); i++ {
+        field := typ.Field(i)
+        value := val.Field(i)
+        sb.WriteString(fmt.Sprintf(" %s: %v\n", field.Name, value))
+    }
+    sb.WriteString("}\n")
+    return sb.String()
+}
+
 // SubmitSmResp contains mandatory fields for submit_sm response.
 type SubmitSmResp struct {
 	MessageID string
@@ -213,4 +231,20 @@ func (p *SubmitSmResp) UnmarshalBinary(body []byte) error {
 	var err error
 	p.MessageID, p.Options, err = cStringOptsRespUnmarshal(body)
 	return err
+}
+
+func (p SubmitSmResp) String() string {
+    val := reflect.ValueOf(p)
+    typ := reflect.TypeOf(p)
+
+    var sb strings.Builder
+    sb.WriteString("{\n")
+
+    for i := 0; i < val.NumField(); i++ {
+        field := typ.Field(i)
+        value := val.Field(i)
+        sb.WriteString(fmt.Sprintf(" %s: %v\n", field.Name, value))
+    }
+    sb.WriteString("}\n")
+    return sb.String()
 }

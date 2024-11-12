@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/majiddarvishan/smpp/pdu"
 )
@@ -17,6 +18,18 @@ type Context struct {
 	hdr    pdu.Header
 	pdu    pdu.PDU
 	close  bool
+}
+
+//todo: it's not correct place
+func (h *Context) String() string {
+    var sb strings.Builder
+    sb.WriteString("{\n")
+    // sb.WriteString(fmt.Sprintf(" length: %d\n", h.length))
+    // sb.WriteString(fmt.Sprintf(" commandID: %d\n", h.commandID))
+    sb.WriteString(fmt.Sprintf(" status: %d\n", h.status))
+    sb.WriteString(fmt.Sprintf(" sequence: %d\n", h.seq))
+    sb.WriteString("}\n")
+    return sb.String()
 }
 
 func (ctx *Context) DebugReq() string {
@@ -302,7 +315,8 @@ func (ctx *Context) Respond(resp pdu.PDU, status pdu.Status) error {
 		ctx.Sess.mu.Unlock()
 		return err
 	}
-	ctx.Sess.conf.Logger.InfoF("sent response: %s %s %+v", ctx.Sess, resp.CommandID(), resp)
+	// ctx.Sess.conf.Logger.InfoF("sent response: %s %s %+v", ctx.Sess, resp.CommandID(), resp)
+    ctx.Sess.conf.Logger.InfoF("sent response: %s %s, \nheader:\n%vbody\n%+v", ctx.Sess, resp.CommandID(), ctx, resp)
 	ctx.Sess.mu.Unlock()
 
 	return nil
@@ -310,6 +324,7 @@ func (ctx *Context) Respond(resp pdu.PDU, status pdu.Status) error {
 
 func (ctx *Context) Respond2(resp pdu.PDU, seq uint32, status pdu.Status) error {
 	ctx.status = status
+    ctx.seq = seq
 	ctx.pdu = resp
 	if resp == nil {
 		return errors.New("smpp: responding with nil PDU")
@@ -326,7 +341,8 @@ func (ctx *Context) Respond2(resp pdu.PDU, seq uint32, status pdu.Status) error 
 		ctx.Sess.mu.Unlock()
 		return err
 	}
-	ctx.Sess.conf.Logger.InfoF("sent response: %s %s %+v", ctx.Sess, resp.CommandID(), resp)
+	// ctx.Sess.conf.Logger.InfoF("sent response: %s %s %+v", ctx.Sess, resp.CommandID(), resp)
+    ctx.Sess.conf.Logger.InfoF("sent response: %s %s, \nheader:\n%vbody\n%+v", ctx.Sess, resp.CommandID(), ctx, resp)
 	ctx.Sess.mu.Unlock()
 
 	return nil
