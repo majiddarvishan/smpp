@@ -306,6 +306,7 @@ func (sess *Session) serve() {
             sess.conf.Logger.InfoF("received response: %s %s, \nheader:\n%vbody\n%+v", sess, p.CommandID(), h, p)
 			delete(sess.sent, h.Sequence())
 
+            sess.wg.Add(1)
 			go sess.handleResponse(ctx, h, p)
 
 			sess.mu.Unlock()
@@ -354,14 +355,6 @@ func (sess *Session) handleRequest(ctx context.Context, h pdu.Header, req pdu.PD
 }
 
 func (sess *Session) handleResponse(ctx context.Context, h pdu.Header, resp pdu.PDU) {
-	// ctx, cancel := context.WithTimeout(ctx, sess.conf.WindowTimeout)
-	// defer func() {
-	// 	cancel()
-	// 	sess.mu.Lock()
-	// 	sess.reqCount--
-	// 	sess.mu.Unlock()
-	// 	sess.wg.Done()
-	// }()
 	sessCtx := &Context{
 		Sess: sess,
 		ctx:  ctx,
@@ -369,6 +362,7 @@ func (sess *Session) handleResponse(ctx context.Context, h pdu.Header, resp pdu.
 		hdr:  h,
 		pdu:  resp,
 	}
+
 	sess.conf.ResponseHandler.ServeSMPP(sessCtx)
 
 	if sessCtx.close {

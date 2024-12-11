@@ -89,7 +89,7 @@ func (p *SubmitSm) UnmarshalBinary(body []byte) error {
 		return fmt.Errorf("smpp/pdu: submit_sm body too short: %d", len(body))
 	}
 	buf := newBuffer(body)
-	res, err := buf.ReadCString(6)
+	res, err := buf.ReadCString(10)
 	if err != nil {
 		return fmt.Errorf("smpp/pdu: decoding service_type %s", err)
 	}

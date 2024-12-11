@@ -309,7 +309,7 @@ func unmarshalBind(body []byte, systemID, password, systemType *string, interfac
 		return fmt.Errorf("smpp/pdu: decoding system_id %s", err)
 	}
 	*systemID = string(res)
-	res, err = buf.ReadCString(9)
+	res, err = buf.ReadCString(20)
 	if err != nil {
 		return fmt.Errorf("smpp/pdu: decoding password %s", err)
 	}
