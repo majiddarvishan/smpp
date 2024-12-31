@@ -349,6 +349,9 @@ func (ctx *Context) Respond2(resp pdu.PDU, seq uint32, status pdu.Status) error 
 }
 
 func (ctx *Context) SendRequest(p pdu.PDU) (uint32, error) {
-	seq, err := ctx.Sess.Send(ctx.ctx, p)
-    return seq, err
+	return ctx.Sess.Send(ctx.ctx, p)
+}
+
+func (ctx *Context) SendRequestWithSeq(p pdu.PDU, seq uint32) (uint32, error) {
+	return ctx.Sess.Send(ctx.ctx, p, pdu.EncodeSeq(seq))
 }
