@@ -166,7 +166,6 @@ type response struct {
 type Session struct {
 	conf     *SessionConf
 	RWC      io.ReadWriteCloser
-	writer   io.Writer
 	enc      *pdu.Encoder
 	dec      *pdu.Decoder
 	wg       sync.WaitGroup
@@ -213,7 +212,6 @@ func NewSession(rwc io.ReadWriteCloser, conf SessionConf) *Session {
 	sess := &Session{
 		conf:   &conf,
 		RWC:    rwc,
-		writer: rwc,
 		enc:    pdu.NewEncoder(conf.Sequencer),
 		dec:    pdu.NewDecoder(rwc),
 		sent:   make(map[uint32]chan response, conf.SendWinSize),
@@ -333,7 +331,7 @@ func (sess *Session) throttle(seq uint32) {
 		return
 	}
 
-	_, err = sess.writer.Write(buf)
+	_, err = sess.RWC.Write(buf)
 	if err != nil {
 		sess.conf.Logger.ErrorF("error sending GenericNack: %s %+v", sess, err)
 	}
@@ -471,7 +469,7 @@ func (sess *Session) SendRequest(ctx context.Context, req pdu.PDU, opts ...pdu.E
 	l := make(chan response, 1)
 	sess.sent[seq] = l
 
-	_, err = sess.writer.Write(buf)
+	_, err = sess.RWC.Write(buf)
 	if err != nil {
 		delete(sess.sent, seq)
 
@@ -513,7 +511,7 @@ func (sess *Session) SendResponse(ctx *Context, resp pdu.PDU, status pdu.Status)
 		return err
 	}
 
-	_, err = sess.writer.Write(buf)
+	_, err = sess.RWC.Write(buf)
 	if err != nil {
 		sess.mu.Unlock()
 		return err
