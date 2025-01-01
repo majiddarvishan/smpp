@@ -247,17 +247,15 @@ func (seq *defaultSequencer) Next() uint32 {
 
 // Encoder is responsible for encoding PDU structure to writer.
 type Encoder struct {
-	w   io.Writer
 	seq Sequencer
 }
 
 // NewEncoder instantiates pdu encoder.
-func NewEncoder(w io.Writer, seq Sequencer) *Encoder {
+func NewEncoder(seq Sequencer) *Encoder {
 	if seq == nil {
 		seq = NewSequencer(1)
 	}
 	return &Encoder{
-		w:   w,
 		seq: seq,
 	}
 }
@@ -268,13 +266,13 @@ type encoderOpts struct {
 }
 
 // Encode PDU structure and write it to the assigned writer.
-func (en *Encoder) Encode(p PDU, opts ...EncoderOption) (uint32, error) {
+func (en *Encoder) Encode(p PDU, opts ...EncoderOption) (uint32, []byte, error) {
 	// TODO consider introducing convention where pdu.MarshalBinary
 	// should return slice with prepended space for header to avoid
 	// allocation and copy.
 	body, err := p.MarshalBinary()
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
 	eOpts := encoderOpts{}
@@ -292,8 +290,7 @@ func (en *Encoder) Encode(p PDU, opts ...EncoderOption) (uint32, error) {
 	}
 	binary.BigEndian.PutUint32(buf[12:16], eOpts.seq)
 	copy(buf[16:], body)
-	_, err = en.w.Write(buf)
-	return eOpts.seq, err
+    return eOpts.seq, buf, err
 }
 
 type EncoderOption func(*encoderOpts)

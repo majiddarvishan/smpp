@@ -166,6 +166,7 @@ type response struct {
 type Session struct {
 	conf     *SessionConf
 	RWC      io.ReadWriteCloser
+	writer   io.Writer
 	enc      *pdu.Encoder
 	dec      *pdu.Decoder
 	wg       sync.WaitGroup
@@ -193,7 +194,7 @@ func NewSession(rwc io.ReadWriteCloser, conf SessionConf) *Session {
 	if conf.RequestHandler == nil {
 		conf.RequestHandler = &defaultHandler{}
 	}
-    if conf.ResponseHandler == nil {
+	if conf.ResponseHandler == nil {
 		conf.ResponseHandler = &defaultHandler{}
 	}
 	if conf.WindowTimeout == 0 {
@@ -212,7 +213,8 @@ func NewSession(rwc io.ReadWriteCloser, conf SessionConf) *Session {
 	sess := &Session{
 		conf:   &conf,
 		RWC:    rwc,
-		enc:    pdu.NewEncoder(rwc, conf.Sequencer),
+		writer: rwc,
+		enc:    pdu.NewEncoder(conf.Sequencer),
 		dec:    pdu.NewDecoder(rwc),
 		sent:   make(map[uint32]chan response, conf.SendWinSize),
 		closed: make(chan struct{}),
@@ -288,7 +290,7 @@ func (sess *Session) serve() {
 		// Handle PDU requests.
 		if pdu.IsRequest(h.CommandID()) {
 			// sess.conf.Logger.InfoF("received request: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
-            sess.conf.Logger.InfoF("received request: %s %s, \nheader:\n%vbody\n%+v", sess, p.CommandID(), h, p)
+			sess.conf.Logger.InfoF("received request: %s %s, \nheader:\n%vbody\n%+v", sess, p.CommandID(), h, p)
 			if sess.reqCount == sess.conf.ReqWinSize {
 				sess.throttle(h.Sequence())
 			} else {
@@ -303,10 +305,10 @@ func (sess *Session) serve() {
 		// if l, ok := sess.sent[h.Sequence()]; ok {
 		if _, ok := sess.sent[h.Sequence()]; ok {
 			// sess.conf.Logger.InfoF("received response: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
-            sess.conf.Logger.InfoF("received response: %s %s, \nheader:\n%vbody\n%+v", sess, p.CommandID(), h, p)
+			sess.conf.Logger.InfoF("received response: %s %s, \nheader:\n%vbody\n%+v", sess, p.CommandID(), h, p)
 			delete(sess.sent, h.Sequence())
 
-            sess.wg.Add(1)
+			sess.wg.Add(1)
 			go sess.handleResponse(ctx, h, p)
 
 			sess.mu.Unlock()
@@ -325,9 +327,15 @@ func (sess *Session) serve() {
 
 func (sess *Session) throttle(seq uint32) {
 	resp := pdu.GenericNack{}
-	if _, err := sess.enc.Encode(resp, pdu.EncodeStatus(pdu.StatusThrottled), pdu.EncodeSeq(seq)); err != nil {
+	_, buf, err := sess.enc.Encode(resp, pdu.EncodeStatus(pdu.StatusThrottled), pdu.EncodeSeq(seq))
+	if err != nil {
 		sess.conf.Logger.ErrorF("error encoding pdu: %s %+v", sess, err)
 		return
+	}
+
+	_, err = sess.writer.Write(buf)
+	if err != nil {
+		sess.conf.Logger.ErrorF("error sending GenericNack: %s %+v", sess, err)
 	}
 }
 
@@ -441,7 +449,7 @@ func (sess *Session) setState(state SessionState) error {
 
 // Send writes PDU to the bounded connection effectively sending it to the peer.
 // Use context deadline to specify how much you would like to wait for the response.
-func (sess *Session) Send(ctx context.Context, req pdu.PDU, opts ...pdu.EncoderOption) (uint32, error) {
+func (sess *Session) SendRequest(ctx context.Context, req pdu.PDU, opts ...pdu.EncoderOption) (uint32, error) {
 	if req == nil {
 		return 0, Error{Msg: "smpp: sending nil pdu"}
 	}
@@ -455,18 +463,27 @@ func (sess *Session) Send(ctx context.Context, req pdu.PDU, opts ...pdu.EncoderO
 		sess.mu.Unlock()
 		return 0, err
 	}
-	seq, err := sess.enc.Encode(req, opts...)
+	seq, buf, err := sess.enc.Encode(req, opts...)
 	if err != nil {
 		sess.mu.Unlock()
 		return 0, err
 	}
 	l := make(chan response, 1)
 	sess.sent[seq] = l
+
+	_, err = sess.writer.Write(buf)
+	if err != nil {
+		delete(sess.sent, seq)
+
+		sess.mu.Unlock()
+		return 0, err
+	}
+
 	// sess.conf.Logger.InfoF("request sent: %s %s%+v", sess, req.CommandID(), req)
-    // sess.conf.Logger.InfoF("request sent: %s %s, \nheader:\n%vbody\n%+v", sess, req.CommandID(), ctx.hdr, req)
-    sess.conf.Logger.InfoF("request sent: %s %s, \nsequence: %d\nbody\n%+v", sess, req.CommandID(), seq, req)
+	// sess.conf.Logger.InfoF("request sent: %s %s, \nheader:\n%vbody\n%+v", sess, req.CommandID(), ctx.hdr, req)
+	sess.conf.Logger.InfoF("request sent: %s %s, \nsequence: %d\nbody\n%+v", sess, req.CommandID(), seq, req)
 	sess.mu.Unlock()
-    return seq, nil
+	return seq, nil
 	// select {
 	// case resp, ok := <-l:
 	// 	if !ok {
@@ -479,6 +496,33 @@ func (sess *Session) Send(ctx context.Context, req pdu.PDU, opts ...pdu.EncoderO
 	// case <-ctx.Done():
 	// 	return nil, nil, ctx.Err()
 	// }
+}
+
+func (sess *Session) SendResponse(ctx *Context, resp pdu.PDU, status pdu.Status) error {
+	sess.mu.Lock()
+	if err := sess.makeTransition(resp.CommandID(), false); err != nil {
+		sess.conf.Logger.ErrorF("transitioning resp pdu: %s %+v", sess, err)
+		sess.mu.Unlock()
+		return err
+	}
+
+	_, buf, err := sess.enc.Encode(resp, pdu.EncodeStatus(status), pdu.EncodeSeq(ctx.seq))
+	if err != nil {
+		sess.conf.Logger.ErrorF("error encoding pdu: %s %+v", sess, err)
+		sess.mu.Unlock()
+		return err
+	}
+
+	_, err = sess.writer.Write(buf)
+	if err != nil {
+		sess.mu.Unlock()
+		return err
+	}
+
+	// ctx.Sess.conf.Logger.InfoF("sent response: %s %s %+v", ctx.Sess, resp.CommandID(), resp)
+	sess.conf.Logger.InfoF("sent response: %s %s, \nheader:\n%vbody\n%+v", sess, resp.CommandID(), ctx, resp)
+	sess.mu.Unlock()
+	return nil
 }
 
 // makeTransition checks if processing pdu ID in the current session state is valid operation,

@@ -90,7 +90,7 @@ func bind(req pdu.PDU, sc SessionConf, bc BindConf) (*Session, error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	_, err = sess.Send(ctx, req)
+	_, err = sess.SendRequest(ctx, req)
 	if err != nil {
 		return sess, err
 	}
@@ -144,7 +144,7 @@ func Unbind(ctx context.Context, sess *Session) error {
 	defer func() {
 		sess.Close()
 	}()
-	_, err := sess.Send(ctx, pdu.Unbind{})
+	_, err := sess.SendRequest(ctx, pdu.Unbind{})
 	if err != nil {
 		return err
 	}
@@ -153,153 +153,153 @@ func Unbind(ctx context.Context, sess *Session) error {
 
 // SendGenericNack is a helper function for sending GenericNack PDU.
 func SendGenericNack(ctx context.Context, sess *Session, p *pdu.GenericNack) error {
-	_, err := sess.Send(ctx, p)
+	_, err := sess.SendRequest(ctx, p)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// SendBindRx is a helper function for sending BindRx PDU.
-func SendBindRx(ctx context.Context, sess *Session, p *pdu.BindRx) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendBindRx is a helper function for sending BindRx PDU.
+// func SendBindRx(ctx context.Context, sess *Session, p *pdu.BindRx) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendBindRxResp is a helper function for sending BindRxResp PDU.
-func SendBindRxResp(ctx context.Context, sess *Session, p *pdu.BindRxResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendBindRxResp is a helper function for sending BindRxResp PDU.
+// func SendBindRxResp(ctx context.Context, sess *Session, p *pdu.BindRxResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendBindTx is a helper function for sending BindTx PDU.
-func SendBindTx(ctx context.Context, sess *Session, p *pdu.BindTx) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendBindTx is a helper function for sending BindTx PDU.
+// func SendBindTx(ctx context.Context, sess *Session, p *pdu.BindTx) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendBindTxResp is a helper function for sending BindTxResp PDU.
-func SendBindTxResp(ctx context.Context, sess *Session, p *pdu.BindTxResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendBindTxResp is a helper function for sending BindTxResp PDU.
+// func SendBindTxResp(ctx context.Context, sess *Session, p *pdu.BindTxResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendBindTRx is a helper function for sending BindTRx PDU.
-func SendBindTRx(ctx context.Context, sess *Session, p *pdu.BindTRx) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendBindTRx is a helper function for sending BindTRx PDU.
+// func SendBindTRx(ctx context.Context, sess *Session, p *pdu.BindTRx) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendBindTRxResp is a helper function for sending BindTRxResp PDU.
-func SendBindTRxResp(ctx context.Context, sess *Session, p *pdu.BindTRxResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendBindTRxResp is a helper function for sending BindTRxResp PDU.
+// func SendBindTRxResp(ctx context.Context, sess *Session, p *pdu.BindTRxResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendUnbind is a helper function for sending Unbind PDU.
-func SendUnbind(ctx context.Context, sess *Session, p *pdu.Unbind) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendUnbind is a helper function for sending Unbind PDU.
+// func SendUnbind(ctx context.Context, sess *Session, p *pdu.Unbind) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendUnbindResp is a helper function for sending UnbindResp PDU.
-func SendUnbindResp(ctx context.Context, sess *Session, p *pdu.UnbindResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendUnbindResp is a helper function for sending UnbindResp PDU.
+// func SendUnbindResp(ctx context.Context, sess *Session, p *pdu.UnbindResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendSubmitSm is a helper function for sending SubmitSm PDU.
-func SendSubmitSm(ctx context.Context, sess *Session, p *pdu.SubmitSm) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendSubmitSm is a helper function for sending SubmitSm PDU.
+// func SendSubmitSm(ctx context.Context, sess *Session, p *pdu.SubmitSm) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendSubmitSmResp is a helper function for sending SubmitSmResp PDU.
-func SendSubmitSmResp(ctx context.Context, sess *Session, p *pdu.SubmitSmResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendSubmitSmResp is a helper function for sending SubmitSmResp PDU.
+// func SendSubmitSmResp(ctx context.Context, sess *Session, p *pdu.SubmitSmResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendDeliverSm is a helper function for sending DeliverSm PDU.
-func SendDeliverSm(ctx context.Context, sess *Session, p *pdu.DeliverSm) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendDeliverSm is a helper function for sending DeliverSm PDU.
+// func SendDeliverSm(ctx context.Context, sess *Session, p *pdu.DeliverSm) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendDeliverSmResp is a helper function for sending DeliverSmResp PDU.
-func SendDeliverSmResp(ctx context.Context, sess *Session, p *pdu.DeliverSmResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendDeliverSmResp is a helper function for sending DeliverSmResp PDU.
+// func SendDeliverSmResp(ctx context.Context, sess *Session, p *pdu.DeliverSmResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendOutbind is a helper function for sending Outbind PDU.
-func SendOutbind(ctx context.Context, sess *Session, p *pdu.Outbind) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendOutbind is a helper function for sending Outbind PDU.
+// func SendOutbind(ctx context.Context, sess *Session, p *pdu.Outbind) error {
+// 	_, err := sess.SendRequest(ctx, p)
+//     return err
+// }
 
-// SendEnquireLink is a helper function for sending EnquireLink PDU.
-func SendEnquireLink(ctx context.Context, sess *Session, p *pdu.EnquireLink) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendEnquireLink is a helper function for sending EnquireLink PDU.
+// func SendEnquireLink(ctx context.Context, sess *Session, p *pdu.EnquireLink) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendEnquireLinkResp is a helper function for sending EnquireLinkResp PDU.
-func SendEnquireLinkResp(ctx context.Context, sess *Session, p *pdu.EnquireLinkResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendEnquireLinkResp is a helper function for sending EnquireLinkResp PDU.
+// func SendEnquireLinkResp(ctx context.Context, sess *Session, p *pdu.EnquireLinkResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendSubmitMulti is a helper function for sending SubmitMulti PDU.
-func SendSubmitMulti(ctx context.Context, sess *Session, p *pdu.SubmitMulti) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendSubmitMulti is a helper function for sending SubmitMulti PDU.
+// func SendSubmitMulti(ctx context.Context, sess *Session, p *pdu.SubmitMulti) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendSubmitMultiResp is a helper function for sending SubmitMultiResp PDU.
-func SendSubmitMultiResp(ctx context.Context, sess *Session, p *pdu.SubmitMultiResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendSubmitMultiResp is a helper function for sending SubmitMultiResp PDU.
+// func SendSubmitMultiResp(ctx context.Context, sess *Session, p *pdu.SubmitMultiResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendAlertNotification is a helper function for sending AlertNotification PDU.
-func SendAlertNotification(ctx context.Context, sess *Session, p *pdu.AlertNotification) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendAlertNotification is a helper function for sending AlertNotification PDU.
+// func SendAlertNotification(ctx context.Context, sess *Session, p *pdu.AlertNotification) error {
+// 	_, err := sess.SendRequest(ctx, p)
+//     return err
+// }
 
-// SendDataSm is a helper function for sending DataSm PDU.
-func SendDataSm(ctx context.Context, sess *Session, p *pdu.DataSm) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendDataSm is a helper function for sending DataSm PDU.
+// func SendDataSm(ctx context.Context, sess *Session, p *pdu.DataSm) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendDataSmResp is a helper function for sending DataSmResp PDU.
-func SendDataSmResp(ctx context.Context, sess *Session, p *pdu.DataSmResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendDataSmResp is a helper function for sending DataSmResp PDU.
+// func SendDataSmResp(ctx context.Context, sess *Session, p *pdu.DataSmResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendQuerySm is a helper function for sending QuerySm PDU.
-func SendQuerySm(ctx context.Context, sess *Session, p *pdu.QuerySm) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendQuerySm is a helper function for sending QuerySm PDU.
+// func SendQuerySm(ctx context.Context, sess *Session, p *pdu.QuerySm) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendQuerySmResp is a helper function for sending QuerySmResp PDU.
-func SendQuerySmResp(ctx context.Context, sess *Session, p *pdu.QuerySmResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendQuerySmResp is a helper function for sending QuerySmResp PDU.
+// func SendQuerySmResp(ctx context.Context, sess *Session, p *pdu.QuerySmResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendReplaceSm is a helper function for sending ReplaceSm PDU.
-func SendReplaceSm(ctx context.Context, sess *Session, p *pdu.ReplaceSm) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendReplaceSm is a helper function for sending ReplaceSm PDU.
+// func SendReplaceSm(ctx context.Context, sess *Session, p *pdu.ReplaceSm) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendReplaceSmResp is a helper function for sending ReplaceSmResp PDU.
-func SendReplaceSmResp(ctx context.Context, sess *Session, p *pdu.ReplaceSmResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendReplaceSmResp is a helper function for sending ReplaceSmResp PDU.
+// func SendReplaceSmResp(ctx context.Context, sess *Session, p *pdu.ReplaceSmResp) error {
+// 	err := sess.SendResponse(ctx, p)
+//     return err
+// }
 
-// SendCancelSm is a helper function for sending CancelSm PDU.
-func SendCancelSm(ctx context.Context, sess *Session, p *pdu.CancelSm) (uint32, error) {
-	return sess.Send(ctx, p)
-}
+// // SendCancelSm is a helper function for sending CancelSm PDU.
+// func SendCancelSm(ctx context.Context, sess *Session, p *pdu.CancelSm) (uint32, error) {
+// 	return sess.SendRequest(ctx, p)
+// }
 
-// SendCancelSmResp is a helper function for sending CancelSmResp PDU.
-func SendCancelSmResp(ctx context.Context, sess *Session, p *pdu.CancelSmResp) error {
-	_, err := sess.Send(ctx, p)
-    return err
-}
+// // SendCancelSmResp is a helper function for sending CancelSmResp PDU.
+// func SendCancelSmResp(ctx context.Context, sess *Session, p *pdu.CancelSmResp) error {
+// 	err := sess.SendResponse(ctx, p, pdu.StatusOK)
+//     return err
+// }

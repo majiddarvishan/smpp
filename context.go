@@ -298,60 +298,32 @@ func (ctx *Context) DataSmResp() (*pdu.DataSmResp, error) {
 
 // Respond sends pdu to the bounded peer.
 func (ctx *Context) Respond(resp pdu.PDU, status pdu.Status) error {
-	ctx.status = status
-	ctx.pdu = resp
 	if resp == nil {
 		return errors.New("smpp: responding with nil PDU")
 	}
 
-	ctx.Sess.mu.Lock()
-	if err := ctx.Sess.makeTransition(resp.CommandID(), false); err != nil {
-		ctx.Sess.conf.Logger.ErrorF("transitioning resp pdu: %s %+v", ctx.Sess, err)
-		ctx.Sess.mu.Unlock()
-		return err
-	}
-	if _, err := ctx.Sess.enc.Encode(resp, pdu.EncodeStatus(status), pdu.EncodeSeq(ctx.seq)); err != nil {
-		ctx.Sess.conf.Logger.ErrorF("error encoding pdu: %s %+v", ctx.Sess, err)
-		ctx.Sess.mu.Unlock()
-		return err
-	}
-	// ctx.Sess.conf.Logger.InfoF("sent response: %s %s %+v", ctx.Sess, resp.CommandID(), resp)
-    ctx.Sess.conf.Logger.InfoF("sent response: %s %s, \nheader:\n%vbody\n%+v", ctx.Sess, resp.CommandID(), ctx, resp)
-	ctx.Sess.mu.Unlock()
+	ctx.status = status
+	ctx.pdu = resp
 
-	return nil
+    return ctx.Sess.SendResponse(ctx, resp, status)
 }
 
-func (ctx *Context) Respond2(resp pdu.PDU, seq uint32, status pdu.Status) error {
+func (ctx *Context) RespondWithSeq(resp pdu.PDU, seq uint32, status pdu.Status) error {
+	if resp == nil {
+		return errors.New("smpp: responding with nil PDU")
+	}
+
 	ctx.status = status
     ctx.seq = seq
 	ctx.pdu = resp
-	if resp == nil {
-		return errors.New("smpp: responding with nil PDU")
-	}
 
-	ctx.Sess.mu.Lock()
-	if err := ctx.Sess.makeTransition(resp.CommandID(), false); err != nil {
-		ctx.Sess.conf.Logger.ErrorF("transitioning resp pdu: %s %+v", ctx.Sess, err)
-		ctx.Sess.mu.Unlock()
-		return err
-	}
-	if _, err := ctx.Sess.enc.Encode(resp, pdu.EncodeStatus(status), pdu.EncodeSeq(seq)); err != nil {
-		ctx.Sess.conf.Logger.ErrorF("error encoding pdu: %s %+v", ctx.Sess, err)
-		ctx.Sess.mu.Unlock()
-		return err
-	}
-	// ctx.Sess.conf.Logger.InfoF("sent response: %s %s %+v", ctx.Sess, resp.CommandID(), resp)
-    ctx.Sess.conf.Logger.InfoF("sent response: %s %s, \nheader:\n%vbody\n%+v", ctx.Sess, resp.CommandID(), ctx, resp)
-	ctx.Sess.mu.Unlock()
-
-	return nil
+    return ctx.Sess.SendResponse(ctx, resp, status)
 }
 
 func (ctx *Context) SendRequest(p pdu.PDU) (uint32, error) {
-	return ctx.Sess.Send(ctx.ctx, p)
+	return ctx.Sess.SendRequest(ctx.ctx, p)
 }
 
 func (ctx *Context) SendRequestWithSeq(p pdu.PDU, seq uint32) (uint32, error) {
-	return ctx.Sess.Send(ctx.ctx, p, pdu.EncodeSeq(seq))
+	return ctx.Sess.SendRequest(ctx.ctx, p, pdu.EncodeSeq(seq))
 }
