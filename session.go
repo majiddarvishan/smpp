@@ -213,7 +213,7 @@ func NewSession(rwc io.ReadWriteCloser, conf SessionConf) *Session {
 		conf:   &conf,
 		RWC:    rwc,
 		enc:    pdu.NewEncoder(conf.Sequencer),
-		dec:    pdu.NewDecoder(rwc),
+		dec:    pdu.NewDecoder(),
 		sent:   make(map[uint32]chan response, conf.SendWinSize),
 		closed: make(chan struct{}),
 	}
@@ -262,7 +262,18 @@ func (sess *Session) serve() {
 	// go sess.resetSentMapPeriodically(ctx)
 
 	for {
-		h, p, err := sess.dec.Decode()
+		// Read header first.
+		var headerBytes [16]byte
+		if _, err := io.ReadFull(sess.RWC, headerBytes[:]); err != nil {
+			if err == io.EOF {
+				sess.conf.Logger.InfoF("decoding pdu: %s %+v", sess, err)
+			} else {
+				sess.conf.Logger.ErrorF("decoding pdu: %s %+v", sess, err)
+			}
+			sess.shutdown()
+			return
+		}
+		h, p, err := sess.dec.DecodeHeader(headerBytes[:])
 		if err != nil {
 			if err == io.EOF {
 				sess.conf.Logger.InfoF("decoding pdu: %s %+v", sess, err)
@@ -272,6 +283,28 @@ func (sess *Session) serve() {
 			sess.shutdown()
 			return
 		}
+		if h.Length() > 16 {
+			bodyBytes := make([]byte, h.Length()-16)
+			if len(bodyBytes) > 0 {
+				if _, err := io.ReadFull(sess.RWC, bodyBytes); err != nil {
+					// sess.conf.Logger.Errorf("smpp: pdu length doesn't match read body length %d != %d", h.Length(), len(bodyBytes))
+                    sess.conf.Logger.ErrorF("smpp: pdu length doesn't match read body length %d != %d", h.Length(), len(bodyBytes))
+					sess.shutdown()
+					return
+				}
+			}
+			// Unmarshal binary
+			if err := p.UnmarshalBinary(bodyBytes); err != nil {
+				if err == io.EOF {
+					sess.conf.Logger.InfoF("decoding pdu: %s %+v", sess, err)
+				} else {
+					sess.conf.Logger.ErrorF("decoding pdu: %s %+v", sess, err)
+				}
+				sess.shutdown()
+				return
+			}
+		}
+
 		sess.mu.Lock()
 
 		// todo: I have to do better implementation

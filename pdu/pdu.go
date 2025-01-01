@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"time"
 
 	smpptime "github.com/majiddarvishan/smpp/time"
@@ -290,7 +289,7 @@ func (en *Encoder) Encode(p PDU, opts ...EncoderOption) (uint32, []byte, error) 
 	}
 	binary.BigEndian.PutUint32(buf[12:16], eOpts.seq)
 	copy(buf[16:], body)
-    return eOpts.seq, buf, err
+	return eOpts.seq, buf, err
 }
 
 type EncoderOption func(*encoderOpts)
@@ -309,23 +308,14 @@ func EncodeStatus(status Status) EncoderOption {
 
 // Decoder reads input from reader and marshals it into PDU.
 type Decoder struct {
-	r io.Reader
 }
 
 // NewDecoder initializes new PDU decoder.
-func NewDecoder(r io.Reader) *Decoder {
-	return &Decoder{
-		r: r,
-	}
+func NewDecoder() *Decoder {
+	return &Decoder{}
 }
 
-// Decode reads data from reader and populates PDU.
-func (d *Decoder) Decode() (Header, PDU, error) {
-	// Read header first.
-	var headerBytes [16]byte
-	if _, err := io.ReadFull(d.r, headerBytes[:]); err != nil {
-		return nil, nil, err
-	}
+func (d *Decoder) DecodeHeader(headerBytes []byte) (Header, PDU, error) {
 	header := &header{}
 	if err := header.UnmarshalBinary(headerBytes[:]); err != nil {
 		return header, nil, err
@@ -334,22 +324,40 @@ func (d *Decoder) Decode() (Header, PDU, error) {
 		return header, nil, fmt.Errorf("smpp: invalid pdu header byte length: %d", header.length)
 	}
 	pdu := NewPDU(header.commandID)
-	if header.length == 16 {
-		// not expecting body to read - we're done.
-		return header, pdu, nil
-	}
-	bodyBytes := make([]byte, header.length-16)
-	if len(bodyBytes) > 0 {
-		if _, err := io.ReadFull(d.r, bodyBytes); err != nil {
-			return header, pdu, fmt.Errorf("smpp: pdu length doesn't match read body length %d != %d", header.length, len(bodyBytes))
-		}
-	}
-	// Unmarshal binary
-	if err := pdu.UnmarshalBinary(bodyBytes); err != nil {
-		return header, pdu, err
-	}
 	return header, pdu, nil
 }
+
+// Decode reads data from reader and populates PDU.
+// func (d *Decoder) Decode() (Header, PDU, error) {
+// 	// Read header first.
+// 	var headerBytes [16]byte
+// 	if _, err := io.ReadFull(d.r, headerBytes[:]); err != nil {
+// 		return nil, nil, err
+// 	}
+// 	header := &header{}
+// 	if err := header.UnmarshalBinary(headerBytes[:]); err != nil {
+// 		return header, nil, err
+// 	}
+// 	if header.length < 16 {
+// 		return header, nil, fmt.Errorf("smpp: invalid pdu header byte length: %d", header.length)
+// 	}
+// 	pdu := NewPDU(header.commandID)
+// 	if header.length == 16 {
+// 		// not expecting body to read - we're done.
+// 		return header, pdu, nil
+// 	}
+// 	bodyBytes := make([]byte, header.length-16)
+// 	if len(bodyBytes) > 0 {
+// 		if _, err := io.ReadFull(d.r, bodyBytes); err != nil {
+// 			return header, pdu, fmt.Errorf("smpp: pdu length doesn't match read body length %d != %d", header.length, len(bodyBytes))
+// 		}
+// 	}
+// 	// Unmarshal binary
+// 	if err := pdu.UnmarshalBinary(bodyBytes); err != nil {
+// 		return header, pdu, err
+// 	}
+// 	return header, pdu, nil
+// }
 
 // NewPDU creates new PDU from CommandID.
 func NewPDU(commandID CommandID) PDU {
