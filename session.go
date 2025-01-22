@@ -394,6 +394,13 @@ func (sess *Session) handleRequest(ctx context.Context, h pdu.Header, req pdu.PD
 }
 
 func (sess *Session) handleResponse(ctx context.Context, h pdu.Header, resp pdu.PDU) {
+    defer func() {
+		// sess.mu.Lock()
+		// sess.reqCount--
+		// sess.mu.Unlock()
+		sess.wg.Done()
+	}()
+
 	sessCtx := &Context{
 		Sess: sess,
 		ctx:  ctx,
