@@ -3,7 +3,6 @@ package smssplitter
 import (
 	"encoding/binary"
 	"errors"
-	"log"
 	"math/rand"
 	"time"
 
