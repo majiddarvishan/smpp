@@ -106,8 +106,22 @@ func packSeptets(septets []byte) []byte {
 	return octets
 }
 
+// randomByte returns a cryptographically secure random byte.
+func randomByte() byte {
+	source := rand.NewSource(time.Now().UnixNano()) // Create a new source
+	rng := rand.New(source)                         // Create a new random number generator
+	return byte(rng.Intn(256))
+}
+
 // SplitUCS2 splits text into UCS-2 segments with 6-byte UDH, max 67 chars each.
 func SplitUCS2(text string) [][]byte {
+	var parts [][]byte
+
+	if len(text) <= 140 {
+		parts = append(parts, []byte(text))
+		return parts
+	}
+
 	runes := []rune(text)
 	const maxChars = 67
 	total := (len(runes) + maxChars - 1) / maxChars
@@ -115,11 +129,9 @@ func SplitUCS2(text string) [][]byte {
 		return nil
 	}
 
-	source := rand.NewSource(time.Now().UnixNano()) // Create a new source
-	rng := rand.New(source)                         // Create a new random number generator
-	ref := byte(rng.Intn(256))
+	// Generate a random reference number for the UDH
+	ref := randomByte()
 
-	var parts [][]byte
 	for i := 0; i < total; i++ {
 		start, end := i*maxChars, (i+1)*maxChars
 		if end > len(runes) {
@@ -138,6 +150,8 @@ func SplitUCS2(text string) [][]byte {
 
 // SplitGSM7 builds true GSM7 segments with UDH and full mapping
 func SplitGSM7(text string) [][]byte {
+	var parts [][]byte
+
 	// map runes to septets (including escapes)
 	var septets []byte
 	for _, r := range text {
@@ -150,14 +164,17 @@ func SplitGSM7(text string) [][]byte {
 		}
 	}
 
+	if len(septets) <= 160 {
+		parts = append(parts, septets)
+		return parts
+	}
+
 	// chunk septets into segments of max 153 septets, avoiding lone ESC
 	chunks := chunkSeptets(septets, 153)
 
-	source := rand.NewSource(time.Now().UnixNano()) // Create a new source
-	rng := rand.New(source)                         // Create a new random number generator
-	ref := byte(rng.Intn(256))
+	// Generate a random reference number for the UDH
+	ref := randomByte()
 
-	var parts [][]byte
 	for i, chunk := range chunks {
 		udh := []byte{0x05, 0x00, 0x03, ref, byte(len(chunks)), byte(i + 1)}
 		packed := packSeptets(chunk)
@@ -167,6 +184,10 @@ func SplitGSM7(text string) [][]byte {
 }
 
 func Split(text string) ([][]byte, DataCoding, error) {
+	if len(text) == 0 {
+		return nil, 0x00, errors.New("empty message")
+	}
+
 	coding := detectCoding(text)
 
 	switch coding {
@@ -177,4 +198,108 @@ func Split(text string) ([][]byte, DataCoding, error) {
 	default:
 		return nil, 0x00, errors.New("unknown data coding")
 	}
+}
+
+// UDH represents a 6-byte User Data Header for SMS concatenation.
+type UDH struct {
+	UDHL  byte // User Data Header Length (always 0x05)
+	IEI   byte // Information Element Identifier (0x00)
+	IEDL  byte // Information Element Data Length (0x03)
+	Ref   byte // Concatenation reference number
+	Total byte // Total number of segments
+	Seq   byte // Sequence number of this segment
+}
+
+// Pack serializes the UDH struct into a 6-byte slice.
+func (u UDH) Pack() []byte {
+	return []byte{u.UDHL, u.IEI, u.IEDL, u.Ref, u.Total, u.Seq}
+}
+
+// Unpack deserializes a 6-byte slice into the UDH struct.
+func (u *UDH) Unpack(data []byte) error {
+	if len(data) != 6 {
+		return errors.New("invalid UDH length, expected 6 bytes")
+	}
+	u.UDHL = data[0]
+	u.IEI = data[1]
+	u.IEDL = data[2]
+	u.Ref = data[3]
+	u.Total = data[4]
+	u.Seq = data[5]
+	return nil
+}
+
+// SplitResult holds the UDH structs and body payloads for each segment.
+type SplitResult struct {
+	UDHs   []UDH      // concatenation headers
+	Bodies [][]byte   // message bodies (UDH excluded)
+	Coding DataCoding // detected encoding scheme
+}
+
+// SplitWithUDH splits the input text and returns a SplitResult struct
+// containing separate UDHs and body payloads for each segment.
+func SplitWithUDH(text string) (SplitResult, error) {
+	if len(text) == 0 {
+		return SplitResult{}, errors.New("empty message")
+	}
+	coding := detectCoding(text)
+	var result SplitResult
+	result.Coding = coding
+
+	switch coding {
+	case DataCodingGSM7:
+		// Build septets
+		septets := make([]byte, 0, len(text)*2)
+		for _, r := range text {
+			if code, ok := gsm7Default[r]; ok {
+				septets = append(septets, code)
+			} else if ext, ok := gsm7Ext[r]; ok {
+				septets = append(septets, 0x1B, ext)
+			} else {
+				septets = append(septets, gsm7Default['?'])
+			}
+		}
+
+		if len(septets) <= 160 {
+			result.Bodies = append(result.Bodies, septets)
+			return result, nil
+		}
+
+		chunks := chunkSeptets(septets, 153)
+
+		// Generate a random reference number for the UDH
+		ref := randomByte()
+		for i, chunk := range chunks {
+			s := UDH{UDHL: 0x05, IEI: 0x00, IEDL: 0x03, Ref: ref, Total: byte(len(chunks)), Seq: byte(i + 1)}
+			result.UDHs = append(result.UDHs, s)
+			result.Bodies = append(result.Bodies, packSeptets(chunk))
+		}
+
+	case DataCodingUCS2:
+		if len(text) <= 140 {
+			result.Bodies = append(result.Bodies, []byte(text))
+			return result, nil
+		}
+
+		runes := []rune(text)
+		const maxChars = 67
+		total := (len(runes) + maxChars - 1) / maxChars
+		ref := randomByte()
+		for i := 0; i < total; i++ {
+			start := i * maxChars
+			end := start + maxChars
+			if end > len(runes) {
+				end = len(runes)
+			}
+			s := UDH{UDHL: 0x05, IEI: 0x00, IEDL: 0x03, Ref: ref, Total: byte(total), Seq: byte(i + 1)}
+			result.UDHs = append(result.UDHs, s)
+			seg := runes[start:end]
+			ucs2 := make([]byte, len(seg)*2)
+			for j, r := range seg {
+				binary.BigEndian.PutUint16(ucs2[j*2:], uint16(r))
+			}
+			result.Bodies = append(result.Bodies, ucs2)
+		}
+	}
+	return result, nil
 }
