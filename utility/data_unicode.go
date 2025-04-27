@@ -1,4 +1,4 @@
-package smssplitter
+package utility
 
 type dataCodingUnicode int
 

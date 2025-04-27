@@ -1,4 +1,4 @@
-package smssplitter
+package utility
 
 import (
 	"reflect"
