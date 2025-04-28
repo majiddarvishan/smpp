@@ -175,39 +175,39 @@ func Split(text string) ([][]byte, DataCoding, error) {
 }
 
 // UDH represents a 6-byte User Data Header for SMS concatenation.
-type UDH struct {
-	UDHL  byte // User Data Header Length (always 0x05)
-	IEI   byte // Information Element Identifier (0x00)
-	IEDL  byte // Information Element Data Length (0x03)
-	Ref   byte // Concatenation reference number
-	Total byte // Total number of segments
-	Seq   byte // Sequence number of this segment
-}
+// type UDH struct {
+// 	UDHL  byte // User Data Header Length (always 0x05)
+// 	IEI   byte // Information Element Identifier (0x00)
+// 	IEDL  byte // Information Element Data Length (0x03)
+// 	Ref   byte // Concatenation reference number
+// 	Total byte // Total number of segments
+// 	Seq   byte // Sequence number of this segment
+// }
 
-// Pack serializes the UDH struct into a 6-byte slice.
-func (u UDH) Pack() []byte {
-	return []byte{u.UDHL, u.IEI, u.IEDL, u.Ref, u.Total, u.Seq}
-}
+// // Pack serializes the UDH struct into a 6-byte slice.
+// func (u UDH) Pack() []byte {
+// 	return []byte{u.UDHL, u.IEI, u.IEDL, u.Ref, u.Total, u.Seq}
+// }
 
-// Unpack deserializes a 6-byte slice into the UDH struct.
-func (u *UDH) Unpack(data []byte) error {
-	if len(data) != 6 {
-		return errors.New("invalid UDH length, expected 6 bytes")
-	}
-	u.UDHL = data[0]
-	u.IEI = data[1]
-	u.IEDL = data[2]
-	u.Ref = data[3]
-	u.Total = data[4]
-	u.Seq = data[5]
-	return nil
-}
+// // Unpack deserializes a 6-byte slice into the UDH struct.
+// func (u *UDH) Unpack(data []byte) error {
+// 	if len(data) != 6 {
+// 		return errors.New("invalid UDH length, expected 6 bytes")
+// 	}
+// 	u.UDHL = data[0]
+// 	u.IEI = data[1]
+// 	u.IEDL = data[2]
+// 	u.Ref = data[3]
+// 	u.Total = data[4]
+// 	u.Seq = data[5]
+// 	return nil
+// }
 
 // SplitResult holds the UDH structs and body payloads for each segment.
 type SplitResult struct {
-	UDHs   []UDH      // concatenation headers
-	Bodies [][]byte   // message bodies (UDH excluded)
-	Coding DataCoding // detected encoding scheme
+	UDHs   []UserDataHeader // headers
+	Bodies [][]byte         // message bodies (UDH excluded)
+	Coding DataCoding       // detected encoding scheme
 }
 
 // SplitWithUDH splits the input text and returns a SplitResult struct
@@ -244,8 +244,13 @@ func SplitWithUDH(text string) (SplitResult, error) {
 		// Generate a random reference number for the UDH
 		ref := randomByte()
 		for i, chunk := range chunks {
-			s := UDH{UDHL: 0x05, IEI: 0x00, IEDL: 0x03, Ref: ref, Total: byte(len(chunks)), Seq: byte(i + 1)}
-			result.UDHs = append(result.UDHs, s)
+            mpd := MultiPartData{Ref: uint16(ref), Total: uint8(len(chunks)), Seq: uint8(i + 1)}
+            udh:= NewUserDataHeader()
+            udh.SetMultiPartData(mpd)
+            result.UDHs = append(result.UDHs, *udh)
+			// s := UDH{UDHL: 0x05, IEI: 0x00, IEDL: 0x03, Ref: ref, Total: byte(len(chunks)), Seq: byte(i + 1)}
+			// result.UDHs = append(result.UDHs, s)
+
 			result.Bodies = append(result.Bodies, packSeptets(chunk))
 		}
 
@@ -265,8 +270,13 @@ func SplitWithUDH(text string) (SplitResult, error) {
 			if end > len(runes) {
 				end = len(runes)
 			}
-			s := UDH{UDHL: 0x05, IEI: 0x00, IEDL: 0x03, Ref: ref, Total: byte(total), Seq: byte(i + 1)}
-			result.UDHs = append(result.UDHs, s)
+            mpd := MultiPartData{Ref: uint16(ref), Total: uint8(total), Seq: uint8(i + 1)}
+            udh:= NewUserDataHeader()
+            udh.SetMultiPartData(mpd)
+            result.UDHs = append(result.UDHs, *udh)
+
+			// s := UDH{UDHL: 0x05, IEI: 0x00, IEDL: 0x03, Ref: ref, Total: byte(total), Seq: byte(i + 1)}
+			// result.UDHs = append(result.UDHs, s)
 			seg := runes[start:end]
 			ucs2 := make([]byte, len(seg)*2)
 			for j, r := range seg {
