@@ -2,8 +2,6 @@ package utility
 
 import (
 	"fmt"
-
-	"github.com/majiddarvishan/smpp/pdu"
 )
 
 func UnpackShortMessage(dataCoding int, shortMessage string) (error, *UserDataHeader, string) {
