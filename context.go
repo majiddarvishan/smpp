@@ -76,6 +76,12 @@ func (ctx *Context) CloseSession() {
 	ctx.close = true
 }
 
+func (ctx *Context) ForceClose() {
+    ctx.close = true
+	// ctx.Sess.Close()
+    ctx.Sess.shutdown()
+}
+
 func (ctx *Context) Header() pdu.Header {
 	return ctx.hdr
 }
