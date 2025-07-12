@@ -1,12 +1,12 @@
 package utility
 
-type dataCodingUnicode int
+type DataCodingType int
 
 const (
-	dc_ascii_7_bit dataCodingUnicode = iota
-	dc_ascii_8_bit
-	dc_binary
-	dc_ucs2
+	DCT_Ascii_7_bit DataCodingType = iota
+	DCT_Ascii_8_bit
+	DCT_Binary
+	DCT_UCS2
 )
 
 const (
@@ -38,7 +38,7 @@ const (
 	data_coding_message_class        uint8 = 0xf0
 )
 
-func extractUnicode(data_coding int) dataCodingUnicode {
+func ExtractUnicode(data_coding int) DataCodingType {
 	switch uint8(data_coding) & coding_group_bits_mask {
 	case general_data_coding_indication_0:
 		switch uint8(data_coding) & data_coding_mask {
@@ -54,53 +54,53 @@ func extractUnicode(data_coding int) dataCodingUnicode {
 			0x0B,
 			0x0C,
 			0x0F:
-			return dc_ascii_8_bit
+			return DCT_Ascii_8_bit
 		// Binary
 		case 0x02, 0x04, 0x09, 0x0A:
-			return dc_binary
+			return DCT_Binary
 		// usc2
 		case 0x08:
-			return dc_ucs2
+			return DCT_UCS2
 		default:
-			return dc_ascii_7_bit
+			return DCT_Ascii_7_bit
 		}
 
 	case general_data_coding_indication_1,
-	general_data_coding_indication_2,
-	general_data_coding_indication_3,
-	automatic_deletion_group_0,
-	automatic_deletion_group_1,
-	automatic_deletion_group_2,
-	automatic_deletion_group_3:
+		general_data_coding_indication_2,
+		general_data_coding_indication_3,
+		automatic_deletion_group_0,
+		automatic_deletion_group_1,
+		automatic_deletion_group_2,
+		automatic_deletion_group_3:
 		switch uint8(data_coding) & alphabet_mask {
 		case data_8_bit:
-			return dc_binary
+			return DCT_Binary
 		case ucs2:
-			return dc_ucs2
+			return DCT_UCS2
 		case default_alphabet,
-		reserved:
-            return dc_ascii_7_bit
+			reserved:
+			return DCT_Ascii_7_bit
 		default:
-			return dc_ascii_7_bit
+			return DCT_Ascii_7_bit
 		}
 
 	case reserved_group_0,
-	reserved_group_1,
-	reserved_group_2,
-	reserved_group_3,
-	mwi_group_discard_message,
-	mwi_group_store_message_1:
-		return dc_ascii_7_bit
+		reserved_group_1,
+		reserved_group_2,
+		reserved_group_3,
+		mwi_group_discard_message,
+		mwi_group_store_message_1:
+		return DCT_Ascii_7_bit
 	case mwi_group_store_message_2:
-		return dc_ucs2
+		return DCT_UCS2
 	case data_coding_message_class:
 		// Bit2 Message coding 0->Default alphabet 1->8-bit data
 		if (uint8(data_coding) & 0x04) != 0 {
-			return dc_binary
+			return DCT_Binary
 		} else {
-			return dc_ascii_7_bit
+			return DCT_Ascii_7_bit
 		}
 	default:
-		return dc_ascii_7_bit
+		return DCT_Ascii_7_bit
 	}
 }

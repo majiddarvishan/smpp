@@ -4,28 +4,28 @@ import (
 	"fmt"
 )
 
-func UnpackShortMessage(dataCoding int, shortMessage string) (error, *UserDataHeader, string) {
-	dct := extractUnicode(dataCoding)
-	if dct == dc_ascii_8_bit && len(shortMessage) > 160 {
-		return fmt.Errorf("unpacking shortMessage failed, shortMessage length is larger than 160"), nil, ""
+func UnpackShortMessage(dataCoding int, shortMessage string) (*UserDataHeader, string, error) {
+	dct := ExtractUnicode(dataCoding)
+	if dct == DCT_Ascii_8_bit && len(shortMessage) > 160 {
+		return nil, "", fmt.Errorf("unpacking shortMessage failed, shortMessage length is larger than 160")
 	}
 
-	if dct != dc_ascii_8_bit && len(shortMessage) > 140 {
-		return fmt.Errorf("unpacking shortMessage failed, shortMessage length is larger than 140"), nil, ""
+	if dct != DCT_Ascii_8_bit && len(shortMessage) > 140 {
+		return nil, "", fmt.Errorf("unpacking shortMessage failed, shortMessage length is larger than 140")
 	}
 
 	udhl := uint8(shortMessage[0])
 
 	if int(udhl) >= len(shortMessage) {
-		return fmt.Errorf("unpacking shortMessage failed, UDH lenght is larger than shortMessage"), nil, ""
+		return nil, "", fmt.Errorf("unpacking shortMessage failed, UDH lenght is larger than shortMessage")
 	}
 
 	udh := NewUserDataHeader()
 	udh.deserialize(shortMessage[1 : udhl+1])
-	return nil, udh, shortMessage[1+udhl:]
+	return udh, shortMessage[1+udhl:], nil
 }
 
-func PackShortMessage(udh *UserDataHeader, body string, dataCoding int) (error, string) {
+func PackShortMessage(udh *UserDataHeader, body string, dataCoding int) (string, error) {
 	var shortMessage string
 
 	serialized_udh := udh.serialize()
@@ -36,15 +36,15 @@ func PackShortMessage(udh *UserDataHeader, body string, dataCoding int) (error, 
 
 	shortMessage += body
 
-	dct := extractUnicode(dataCoding)
+	dct := ExtractUnicode(dataCoding)
 
-	if dct == dc_ascii_8_bit && len(shortMessage) > 160 {
-		return fmt.Errorf("packing shortMessage failed, shortMessage length is larger than 160"), ""
+	if dct == DCT_Ascii_8_bit && len(shortMessage) > 160 {
+		return "", fmt.Errorf("packing shortMessage failed, shortMessage length is larger than 160")
 	}
 
-	if dct != dc_ascii_8_bit && len(shortMessage) > 140 {
-		return fmt.Errorf("packing shortMessage failed, shortMessage length is larger than 140"), ""
+	if dct != DCT_Ascii_8_bit && len(shortMessage) > 140 {
+		return "", fmt.Errorf("packing shortMessage failed, shortMessage length is larger than 140")
 	}
 
-	return nil, shortMessage
+	return shortMessage, nil
 }
