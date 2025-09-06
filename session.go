@@ -446,6 +446,8 @@ func (sess *Session) Close() error {
 
 // Must be guarded by mutex.
 func (sess *Session) setState(state SessionState) error {
+    sess.conf.Logger.InfoF("smpp: old state (%s) wants change to new state (%s)", sess.state.String(), state.String())
+
 	if sess.state == state {
 		return fmt.Errorf("smpp: setting same state twice %s", state)
 	}
