@@ -460,6 +460,7 @@ func (sess *Session) setState(state SessionState) error {
 	case StateBinding:
 		switch state {
 		case StateOpen, StateBoundRx, StateBoundTRx, StateBoundTx:
+        case StateClosing:
 		default:
 			return fmt.Errorf("smpp: setting binding session to invalid state %s", state)
 		}
