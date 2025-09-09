@@ -223,35 +223,36 @@ func SplitWithUDH(text string) (SplitResult, error) {
 	switch coding {
 	case DataCodingGSM7:
 		// Build septets
-		septets := make([]byte, 0, len(text)*2)
-		for _, r := range text {
-			if code, ok := gsm7Default[r]; ok {
-				septets = append(septets, code)
-			} else if ext, ok := gsm7Ext[r]; ok {
-				septets = append(septets, 0x1B, ext)
-			} else {
-				septets = append(septets, gsm7Default['?'])
-			}
-		}
+		//septets := make([]byte, 0, len(text)*2)
+		//for _, r := range text {
+		//	if code, ok := gsm7Default[r]; ok {
+		//		septets = append(septets, code)
+		//	} else if ext, ok := gsm7Ext[r]; ok {
+		//		septets = append(septets, 0x1B, ext)
+		//	} else {
+		//		septets = append(septets, gsm7Default['?'])
+		//	}
+		//}
 
-		if len(septets) <= 160 {
-			result.Bodies = append(result.Bodies, septets)
+		if len(text) <= 160 {
+			result.Bodies = append(result.Bodies, []byte(text))
 			return result, nil
 		}
 
-		chunks := chunkSeptets(septets, 153)
+		chunks := chunkSeptets([]byte(text), 153)
 
 		// Generate a random reference number for the UDH
 		ref := randomByte()
 		for i, chunk := range chunks {
-            mpd := MultiPartData{Ref: uint16(ref), Total: uint8(len(chunks)), Seq: uint8(i + 1)}
-            udh:= NewUserDataHeader()
-            udh.SetMultiPartData(mpd)
-            result.UDHs = append(result.UDHs, *udh)
+			mpd := MultiPartData{Ref: uint16(ref), Total: uint8(len(chunks)), Seq: uint8(i + 1)}
+			udh := NewUserDataHeader()
+			udh.SetMultiPartData(mpd)
+			result.UDHs = append(result.UDHs, *udh)
 			// s := UDH{UDHL: 0x05, IEI: 0x00, IEDL: 0x03, Ref: ref, Total: byte(len(chunks)), Seq: byte(i + 1)}
 			// result.UDHs = append(result.UDHs, s)
 
-			result.Bodies = append(result.Bodies, packSeptets(chunk))
+			//result.Bodies = append(result.Bodies, packSeptets(chunk))
+			result.Bodies = append(result.Bodies, chunk)
 		}
 
 	case DataCodingUCS2:
@@ -270,10 +271,10 @@ func SplitWithUDH(text string) (SplitResult, error) {
 			if end > len(runes) {
 				end = len(runes)
 			}
-            mpd := MultiPartData{Ref: uint16(ref), Total: uint8(total), Seq: uint8(i + 1)}
-            udh:= NewUserDataHeader()
-            udh.SetMultiPartData(mpd)
-            result.UDHs = append(result.UDHs, *udh)
+			mpd := MultiPartData{Ref: uint16(ref), Total: uint8(total), Seq: uint8(i + 1)}
+			udh := NewUserDataHeader()
+			udh.SetMultiPartData(mpd)
+			result.UDHs = append(result.UDHs, *udh)
 
 			// s := UDH{UDHL: 0x05, IEI: 0x00, IEDL: 0x03, Ref: ref, Total: byte(total), Seq: byte(i + 1)}
 			// result.UDHs = append(result.UDHs, s)
