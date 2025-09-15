@@ -288,7 +288,7 @@ func (sess *Session) serve() {
 			if len(bodyBytes) > 0 {
 				if _, err := io.ReadFull(sess.RWC, bodyBytes); err != nil {
 					// sess.conf.Logger.Errorf("smpp: pdu length doesn't match read body length %d != %d", h.Length(), len(bodyBytes))
-                    sess.conf.Logger.ErrorF("smpp: pdu length doesn't match read body length %d != %d", h.Length(), len(bodyBytes))
+					sess.conf.Logger.ErrorF("smpp: pdu length doesn't match read body length %d != %d", h.Length(), len(bodyBytes))
 					sess.shutdown()
 					return
 				}
@@ -394,7 +394,7 @@ func (sess *Session) handleRequest(ctx context.Context, h pdu.Header, req pdu.PD
 }
 
 func (sess *Session) handleResponse(ctx context.Context, h pdu.Header, resp pdu.PDU) {
-    defer func() {
+	defer func() {
 		// sess.mu.Lock()
 		// sess.reqCount--
 		// sess.mu.Unlock()
@@ -446,7 +446,7 @@ func (sess *Session) Close() error {
 
 // Must be guarded by mutex.
 func (sess *Session) setState(state SessionState) error {
-    sess.conf.Logger.InfoF("smpp: old state (%s) wants change to new state (%s)", sess.state.String(), state.String())
+	sess.conf.Logger.InfoF("smpp: old state (%s) wants change to new state (%s)", sess.state.String(), state.String())
 
 	if sess.state == state {
 		return fmt.Errorf("smpp: setting same state twice %s", state)
@@ -460,7 +460,7 @@ func (sess *Session) setState(state SessionState) error {
 	case StateBinding:
 		switch state {
 		case StateOpen, StateBoundRx, StateBoundTRx, StateBoundTx:
-        case StateClosing:
+		case StateClosing:
 		default:
 			return fmt.Errorf("smpp: setting binding session to invalid state %s", state)
 		}
@@ -698,6 +698,12 @@ func (sess *Session) resetSentMapPeriodically() {
 			sess.mu.Unlock()
 		}
 	}
+}
+
+func (sess *Session) ReleaseSequenceNumber(seq uint32) {
+	sess.mu.Lock()
+	delete(sess.sent, seq)
+	sess.mu.Unlock()
 }
 
 // StatusError implements error interface for SMPP status errors.
