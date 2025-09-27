@@ -19,17 +19,22 @@ const (
 
 // detectCoding returns the detected DataCoding (GSM7 or UCS2).
 func detectCoding(text string) DataCoding {
-	for _, r := range text {
-		if _, ok := gsm7Default[r]; ok {
-			continue
-		}
-		if _, ok := gsm7Ext[r]; ok {
-			continue
-		}
-		// any unsupported rune => UCS2
-		return DataCodingUCS2
+	if IsEnglishOrEmoji(text) {
+		return DataCodingGSM7
 	}
-	return DataCodingGSM7
+	return DataCodingUCS2
+
+	// for _, r := range text {
+	// 	if _, ok := gsm7Default[r]; ok {
+	// 		continue
+	// 	}
+	// 	if _, ok := gsm7Ext[r]; ok {
+	// 		continue
+	// 	}
+	// 	// any unsupported rune => UCS2
+	// 	return DataCodingUCS2
+	// }
+	// return DataCodingGSM7
 }
 
 // checks if the given text is in English
