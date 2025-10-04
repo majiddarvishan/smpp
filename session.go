@@ -351,7 +351,7 @@ func (sess *Session) serve() {
 			// }
 			continue
 		}
-		sess.conf.Logger.ErrorF("unexpected response: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
+		sess.conf.Logger.InfoF("unexpected response: %s %s%+v, header: %#v", sess, p.CommandID(), p, h)
 		sess.mu.Unlock()
 	}
 }
